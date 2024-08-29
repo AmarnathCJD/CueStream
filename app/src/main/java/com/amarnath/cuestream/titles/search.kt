@@ -3,6 +3,7 @@ package com.amarnath.cuestream.titles
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.amarnath.cuestream.R
@@ -48,11 +50,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun TitleSearchPage(padding: PaddingValues) {
+fun TitleSearchPage(padding: PaddingValues, nav: NavController) {
     val searchResults = remember { mutableStateListOf<SearchResult>() }
     LaunchedEffect(Unit) {
         //IMDB().search("Lovely Runner", searchResults)
-        IMDB().getTitle("tt1630029")
+//        IMDB().getTitle("tt1630029")
+//        IMDB().getTrailerSource("https://www.imdb.com/video/vi529579545/?ref_=ttvi_vi_imdb_2")
     }
     Column (
         modifier = Modifier
@@ -74,7 +77,7 @@ fun TitleSearchPage(padding: PaddingValues) {
             SearchBar(searchResults)
             searchResults.forEach {
                 if (it.poster.isNotEmpty())
-                    SearchResultItem(it)
+                    SearchResultItem(it, nav)
             }
         }
     }
@@ -143,11 +146,17 @@ fun SearchBar(searchResults: MutableList<SearchResult>) {
 }
 
 @Composable
-fun SearchResultItem(item: SearchResult) {
+fun SearchResultItem(item: SearchResult, nav: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 2.dp)
+            .clickable {
+                ActiveTitleID.value = item.imdbId
+                nav.navigate("title") {
+                    launchSingleTop = true
+                }
+            }
             .border(
                 width = 1.dp,
                 color = Color(0xFF110A0C),

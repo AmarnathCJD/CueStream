@@ -11,11 +11,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.amarnath.cuestream.meta.IMDB
+import com.amarnath.cuestream.titles.MainTitlePage
 import com.amarnath.cuestream.titles.TitleSearchPage
 import com.amarnath.cuestream.ui.theme.CueStreamTheme
+
+val IMDBInst = IMDB()
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -25,7 +30,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             CueStreamTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = { AppTopBar() }) {
-                    TitleSearchPage(it)
+                    val padd = it
+                    val nav = rememberNavController()
+                    NavHost(navController = nav, startDestination = "search") {
+                        composable("search") {
+                            TitleSearchPage(padding = padd, nav = nav)
+                        }
+                        composable("title") {
+                            MainTitlePage(padding = padd, nav = nav)
+                        }
+                    }
                 }
             }
         }

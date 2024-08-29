@@ -1,6 +1,7 @@
 package com.amarnath.cuestream.meta
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import org.json.JSONObject
 
 data class SearchResult(
@@ -195,7 +196,7 @@ class IMDB {
         })
     }
 
-    fun getTitle(id: String) {
+    fun getTitle(id: String, store: MutableState<MainTitle?>) {
         val startTimer = System.currentTimeMillis()
         val request = okhttp3.Request.Builder()
             .url("https://www.imdb.com/title/$id")
@@ -228,7 +229,7 @@ class IMDB {
                             ?.replace("</script>", "")
                     val jsonMeta = jsonMetaObj?.let { JSONObject(it) }
                     val title =
-                        jsonMeta?.optString("name", "") ?: jsonMeta?.optString("title", "") ?: "N/A"
+                        soup?.select("span.hero__primary-text")?.first()?.text() ?: "N/A"
                     val altTitle = jsonMeta?.optString("alternateName", "") ?: ""
                     val description = jsonMeta?.optString("description", "") ?: ""
                     val rating =
@@ -338,7 +339,62 @@ class IMDB {
                         productionCompanies = productionCompanies ?: "N/A"
                     )
 
+                    store.value = mainTitle
+
                     Log.d("IMDB", "GetTitle - Took ${System.currentTimeMillis() - startTimer}ms")
+                } catch (e: Exception) {
+                    Log.e("IMDB", "Failed to parse response: ${e.message}")
+                }
+            }
+        })
+    }
+
+    fun getTrailerSource(url: String, store: MutableState<Pair<String, String>?>) {
+        val startTimer = System.currentTimeMillis()
+        val request = okhttp3.Request.Builder()
+            .url(url)
+            .headers(
+                okhttp3.Headers.headersOf(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                )
+            )
+            .build()
+        client.newCall(request).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                Log.e("IMDB", "Failed to execute request: ${e.message}")
+            }
+
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                if (!response.isSuccessful) {
+                    Log.e(
+                        "IMDB",
+                        "Failed to execute request: ${response.code}, ${response.message}, url: ${request.url}"
+                    )
+                    return
+                }
+                try {
+                    val soup = response.body?.string()?.let { org.jsoup.Jsoup.parse(it) }
+                    val thumb = soup?.select("script[id=__NEXT_DATA__]")?.first()?.data()
+                        ?.let { JSONObject(it) }
+                        ?.getJSONObject("props")
+                        ?.getJSONObject("pageProps")
+                        ?.getJSONObject("videoPlaybackData")
+                        ?.getJSONObject("video")
+                        ?.getJSONObject("thumbnail")
+                        ?.getString("url")
+                    val trailerSource = soup?.select("script[id=__NEXT_DATA__]")?.first()?.data()
+                        ?.let { JSONObject(it) }
+                        ?.getJSONObject("props")
+                        ?.getJSONObject("pageProps")
+                        ?.getJSONObject("videoPlaybackData")
+                        ?.getJSONObject("video")
+                        ?.getJSONArray("playbackURLs")
+                        ?.getJSONObject(0)
+                        ?.getString("url")
+
+                    store.value = Pair(thumb ?: "", trailerSource ?: "")
+                    Log.d("IMDB", "TrailerSource - Took ${System.currentTimeMillis() - startTimer}ms")
                 } catch (e: Exception) {
                     Log.e("IMDB", "Failed to parse response: ${e.message}")
                 }
