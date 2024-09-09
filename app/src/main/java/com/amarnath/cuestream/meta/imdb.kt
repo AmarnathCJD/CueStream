@@ -21,7 +21,10 @@ data class AutoCompleteResult(
     val title: String,
     val year: String,
     val poster: String,
-    val mediaType: String
+    val mediaType: String,
+    val rating: Double,
+    val plot: String = "",
+    val duration: String = "-/-",
 )
 
 data class MoreLikeThisResult(
@@ -32,31 +35,33 @@ data class MoreLikeThisResult(
 )
 
 data class MainTitle(
-    val id: String,
-    val title: String,
-    val poster: String,
-    val altTitle: String,
-    val description: String,
-    val rating: Double,
-    val viewerClass: String,
+    val id: String, //
+    val title: String, //
+    val poster: String, //
+    val altTitle: String, //
+    val description: String, //
+    val rating: Double, //
+    val viewerClass: String, //
     val duration: String,
-    val genres: String,
-    val releaseDate: String,
-    val actors: String,
-    val trailer: String,
-    val titleCasts: List<Triple<String, String, String>>,
-    val moreLikeThis: List<MoreLikeThisResult>,
-    val releaseDateLong: String,
+    val genres: String, //
+    val releaseDate: String, //
+    val actors: String, //
+    val trailer: String, //
+    val titleCasts: List<Triple<String, String, String>>, //
+    val moreLikeThis: List<MoreLikeThisResult>, //
+    val releaseDateLong: String, //
     val countryOfOrigin: String,
     val languages: String,
-    val alsoKnownAs: String,
+    val alsoKnownAs: String, //
     val filmingLocations: String,
-    val productionCompanies: String
+    val productionCompanies: String,
+    val ratingCount: String = "0",
+    val metaScore: Int = 0
 )
 
 class IMDB {
     private val client = okhttp3.OkHttpClient()
-    fun search(query: String, searchResults: MutableList<SearchResult>) {
+    fun search(query: String, searchResults: MutableList<SearchResult>, fastRes: MutableList<AutoCompleteResult>) {
         val startTimer = System.currentTimeMillis()
         val request = okhttp3.Request.Builder()
             .url("https://www.imdb.com/search/title/?title=${query.replace(" ", "+")}")
@@ -128,6 +133,14 @@ class IMDB {
                     searchResults.clear()
                     searchResults.addAll(temp)
 
+                    for (i in 0 until temp.size) {
+                        val fastResItem = fastRes.find { it.imdbId == temp[i].imdbId }
+                        if (fastResItem != null) {
+                            println("IMDB: Found fastResItem: ${fastResItem.title}")
+                            fastRes[fastRes.indexOf(fastResItem)] = fastResItem.copy(rating = temp[i].rating, plot = temp[i].plot, duration = temp[i].duration)
+                        }
+                    }
+
                     Log.d("IMDB", "MainSearch - Took ${System.currentTimeMillis() - startTimer}ms")
                 } catch (e: Exception) {
                     Log.e("IMDB", "Failed to parse response")
@@ -136,7 +149,13 @@ class IMDB {
         })
     }
 
-    fun autocomplete(query: String) {
+    fun autocomplete(
+        query: String,
+        fastSearchResults: MutableList<AutoCompleteResult>,
+        showLoading: MutableState<Boolean>
+    ) {
+        if (query.isEmpty())
+            return
         val q = query.replace(" ", "+").trim()
         val startTimer = System.currentTimeMillis()
         val request = okhttp3.Request.Builder()
@@ -174,16 +193,33 @@ class IMDB {
                     val temp = mutableListOf<AutoCompleteResult>()
                     for (i in 0 until results!!.length()) {
                         val result = results.getJSONObject(i)
+                        if (result.optJSONObject("i") === null) {
+                            continue
+                        }
                         temp.add(
                             AutoCompleteResult(
-                                imdbId = result.getString("id"),
-                                title = result.getString("l"),
-                                year = result.getString("y"),
+                                imdbId = result.optString("id"),
+                                title = result.optString("l"),
+                                year = result.optString("y"),
                                 poster = result.getJSONObject("i").getString("imageUrl"),
-                                mediaType = result.getString("q")
+                                mediaType = result.optString("q"),
+                                0.0
                             )
                         )
                     }
+
+                    // print all title and  poster
+                    for (i in 0 until temp.size) {
+                        println("IMDB: Title: ${temp[i].title}, Poster: ${temp[i].poster}")
+                    }
+
+                    fastSearchResults.clear()
+                    fastSearchResults.addAll(temp)
+
+                    showLoading.value = false
+
+                    val slowBgSearch = mutableListOf<SearchResult>()
+                    search(query, slowBgSearch, fastSearchResults)
 
                     Log.d(
                         "IMDB",
@@ -316,12 +352,23 @@ class IMDB {
                             ?.first()
                             ?.select("a")?.text()
 
+                    val ratingCount = soup?.select("div.sc-eb51e184-3.kgbSIj")?.first()?.text()
+                        ?.replace("(", "")?.replace(")", "")?.replace(",", "")?.replace(" ", "")
+                    val metaScore = soup?.select("span.metacritic-score-box")?.first()?.text()?.toInt()
+                        ?: 0
+
+                    // find text 'primevideo' and get the element
+                    val tmBoxWbShoveler = soup?.select("div[data-testid=tm-box-wb-shoveler]")?.text()
+
+
+                    println("IMDB: RatingCount: $ratingCount MetaScore: $metaScore Title: $tmBoxWbShoveler")
+
                     val mainTitle = MainTitle(
                         id = id,
                         title = title,
                         poster = poster ?: "",
                         altTitle = altTitle,
-                        description = description,
+                        description = unescapeHtml(description),
                         rating = rating,
                         viewerClass = viewerClass,
                         duration = duration,
@@ -336,7 +383,9 @@ class IMDB {
                         languages = languages ?: "N/A",
                         alsoKnownAs = alsoKnownAs ?: "N/A",
                         filmingLocations = filmingLocations ?: "N/A",
-                        productionCompanies = productionCompanies ?: "N/A"
+                        productionCompanies = productionCompanies ?: "N/A",
+                        ratingCount = ratingCount ?: "0",
+                        metaScore = metaScore
                     )
 
                     store.value = mainTitle
@@ -401,4 +450,45 @@ class IMDB {
             }
         })
     }
+}
+
+fun unescapeHtml(html: String): String {
+    val out = StringBuilder(html.length)
+    var i = 0
+    while (i < html.length) {
+        if (html[i] == '&') {
+            val start = i
+            i++
+            while (i < html.length && html[i] != ';') {
+                i++
+            }
+            if (i < html.length) {
+                val entity = html.substring(start + 1, i)
+                when {
+                    entity.startsWith("#x") -> {
+                        out.append(entity.substring(2).toInt(16).toChar())
+                    }
+                    entity.startsWith("#") -> {
+                        out.append(entity.substring(1).toInt().toChar())
+                    }
+                    else -> {
+                        when (entity) {
+                            "amp" -> out.append('&')
+                            "quot" -> out.append('"')
+                            "apos" -> out.append('\'')
+                            "lt" -> out.append('<')
+                            "gt" -> out.append('>')
+                            else -> {
+                                out.append('&').append(entity).append(';')
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            out.append(html[i])
+        }
+        i++
+    }
+    return out.toString()
 }

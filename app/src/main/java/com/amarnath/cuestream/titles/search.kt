@@ -4,9 +4,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,12 +17,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,8 +45,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.amarnath.cuestream.R
+import com.amarnath.cuestream.meta.AutoCompleteResult
 import com.amarnath.cuestream.meta.IMDB
-import com.amarnath.cuestream.meta.SearchResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -51,13 +55,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun TitleSearchPage(padding: PaddingValues, nav: NavController) {
-    val searchResults = remember { mutableStateListOf<SearchResult>() }
-    LaunchedEffect(Unit) {
-        //IMDB().search("Lovely Runner", searchResults)
-//        IMDB().getTitle("tt1630029")
-//        IMDB().getTrailerSource("https://www.imdb.com/video/vi529579545/?ref_=ttvi_vi_imdb_2")
-    }
-    Column (
+    val fastSearchResults = remember { mutableStateListOf<AutoCompleteResult>() }
+    val showLoading = remember { mutableStateOf(false) }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color.Black)
@@ -74,8 +75,43 @@ fun TitleSearchPage(padding: PaddingValues, nav: NavController) {
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            SearchBar(searchResults)
-            searchResults.forEach {
+            SearchBar(fastSearchResults, showLoading)
+            if (showLoading.value && fastSearchResults.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                        .padding(8.dp)
+                        .padding(top = 200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFBB86FC),
+                        strokeWidth = 3.dp.plus(1.dp.div(2)),
+                        modifier = Modifier.size(40.dp),
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+                }
+            } else if (fastSearchResults.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                        .padding(8.dp)
+                        .padding(top = 200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Search `Movies` and `TV Shows`",
+                        style = androidx.compose.ui.text.TextStyle(color = Color.White),
+                        fontSize = 16.sp,
+                        letterSpacing = 0.8.sp,
+                        fontWeight = FontWeight(500),
+                        fontFamily = FontFamily.SansSerif
+                    )
+                }
+            }
+            fastSearchResults.forEach {
                 if (it.poster.isNotEmpty())
                     SearchResultItem(it, nav)
             }
@@ -84,7 +120,10 @@ fun TitleSearchPage(padding: PaddingValues, nav: NavController) {
 }
 
 @Composable
-fun SearchBar(searchResults: MutableList<SearchResult>) {
+fun SearchBar(
+    fastSearchResults: MutableList<AutoCompleteResult>,
+    showLoading: MutableState<Boolean>
+) {
     val searchValue = remember { mutableStateOf("") }
     var searchJob by remember { mutableStateOf<Job?>(null) }
     val debounceDelay = 500L
@@ -100,9 +139,14 @@ fun SearchBar(searchResults: MutableList<SearchResult>) {
             onValueChange = {
                 searchValue.value = it
                 searchJob?.cancel()
+                if (it.isEmpty()) {
+                    showLoading.value = false
+                    return@OutlinedTextField
+                }
                 searchJob = CoroutineScope(Dispatchers.Main).launch {
                     delay(debounceDelay)
-                    IMDB().search(searchValue.value, searchResults)
+                    showLoading.value = true
+                    IMDB().autocomplete(searchValue.value, fastSearchResults, showLoading)
                 }
             },
             label = { Text(text = "Search for Movies and TV Shows", fontSize = 14.sp) },
@@ -132,21 +176,30 @@ fun SearchBar(searchResults: MutableList<SearchResult>) {
                 )
             },
             trailingIcon = {
-                Image(
-                    painter = painterResource(id = R.drawable.search_24dp_e8eaed_fill0_wght400_grad0_opsz24),
-                    contentDescription = "Clear Icon",
-                    modifier = Modifier.size(24.dp),
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
-                        Color(0xFFBB86FC)
+                if (showLoading.value) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFBB86FC),
+                        strokeWidth = 3.dp.plus(1.dp.div(2)),
+                        modifier = Modifier.size(24.dp),
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                     )
-                )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.search_24dp_e8eaed_fill0_wght400_grad0_opsz24),
+                        contentDescription = "Clear Icon",
+                        modifier = Modifier.size(24.dp),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                            Color(0xFFBB86FC)
+                        )
+                    )
+                }
             }
         )
     }
 }
 
 @Composable
-fun SearchResultItem(item: SearchResult, nav: NavController) {
+fun SearchResultItem(item: AutoCompleteResult, nav: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -183,7 +236,7 @@ fun SearchResultItem(item: SearchResult, nav: NavController) {
                 model =
                 ImageRequest.Builder(LocalContext.current)
                     .data(
-                        item.poster.split("@._V1_").first() + "@._V1_QL100_UY414_CR5,0,280,414_.jpg"
+                        item.poster.split("@._V1_").first() + "@._V1_QL100_UY430_CR5,0,280,414_.jpg"
                     )
                     .crossfade(true)
                     .build(),
@@ -220,22 +273,26 @@ fun SearchResultItem(item: SearchResult, nav: NavController) {
                     fontSize = 16.sp,
                     fontWeight = FontWeight(700)
                 )
-                Text(
-                    text = item.year,
-                    style = androidx.compose.ui.text.TextStyle(color = Color.Gray),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight(600),
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .background(
-                            Color(0xFF31343C),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                        )
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
-                )
+                if (item.year.isNotEmpty()) {
+                    Text(
+                        text = item.year,
+                        style = androidx.compose.ui.text.TextStyle(color = Color.Gray),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight(600),
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .background(
+                                Color(0xFF31343C),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.padding(top = 1.dp))
+                }
                 Row {
                     Text(
-                        text = "${item.rating} / 10",
+                        text = "IMDB ${if (item.rating > 0.0) item.rating else "??"}",
                         style = androidx.compose.ui.text.TextStyle(color = Color(0xFFFFD54F)),
                         fontSize = 12.sp,
                         fontWeight = FontWeight(600),
@@ -288,8 +345,7 @@ fun SearchResultItem(item: SearchResult, nav: NavController) {
                 }
                 Text(
                     text = listOf(
-                        item.duration,
-                        item.viewerClass,
+                        item.duration.ifEmpty { "N/A" },
                         item.mediaType.ifEmpty { "N/A" },
                         item.imdbId
                     ).filter { it.isNotEmpty() && it != "N/A" }.joinToString(" | "),
@@ -299,12 +355,12 @@ fun SearchResultItem(item: SearchResult, nav: NavController) {
                     modifier = Modifier.padding(top = 2.dp)
                 )
                 Text(
-                    text = trimLongPlot(item.plot),
+                    text = trimLongPlot(item.plot.ifEmpty { "......." }),
                     style = androidx.compose.ui.text.TextStyle(color = Color(0xFFBBBBBB)),
                     fontSize = 10.sp,
                     fontWeight = FontWeight(600),
                     modifier = Modifier.padding(top = 2.dp),
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif
+                    fontFamily = FontFamily.SansSerif
                 )
             }
         }
