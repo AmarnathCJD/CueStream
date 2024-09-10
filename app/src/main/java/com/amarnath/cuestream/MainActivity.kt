@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = { AppTopBar() }) {
                     val padd = it
                     val nav = rememberNavController()
-                    NavHost(navController = nav, startDestination = "search") {
+                    NavHost(navController = nav, startDestination = "title") {
                         composable("search") {
                             TitleSearchPage(padding = padd, nav = nav)
                         }

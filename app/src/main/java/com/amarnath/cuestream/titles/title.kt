@@ -37,6 +37,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +76,7 @@ import com.amarnath.cuestream.IMDBInst
 import com.amarnath.cuestream.R
 import com.amarnath.cuestream.meta.MainTitle
 
-val ActiveTitleID = mutableStateOf<String?>("tt0315327")
+val ActiveTitleID = mutableStateOf<String?>("tt27446493")
 val ActiveTitleData = mutableStateOf<MainTitle?>(null)
 val ActiveTrailerData = mutableStateOf<Pair<String, String>?>(null)
 
@@ -97,7 +99,7 @@ fun MainTitlePage(padding: PaddingValues, nav: NavController) {
 
 @Composable
 fun TrailerPlayer() {
-    //return
+    return
     LaunchedEffect(ActiveTitleData.value) {
         if (ActiveTitleData.value != null) {
             val trailer = ActiveTitleData.value!!.trailer
@@ -225,6 +227,7 @@ fun TitleDetails() {
             Column(
                 modifier = Modifier
                     .background(Color.Black)
+                    .padding(bottom = 10.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 val showShimmer = remember { mutableStateOf(true) }
@@ -233,7 +236,7 @@ fun TitleDetails() {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 30.dp, vertical = 5.dp)
+                        .padding(horizontal = 30.dp, vertical = 16.dp)
                         .background(
                             Color.Black
                         )
@@ -321,7 +324,7 @@ fun TitleDetails() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = titleData.releaseDateLong,
+                                text = titleData.releaseDate,
                                 color = Color.Gray,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight(500),
@@ -367,7 +370,11 @@ fun TitleDetails() {
                             if (titleData.ratingCount != "0") {
                                 Text(
                                     text = "(${titleData.ratingCount})",
-                                    style = androidx.compose.ui.text.TextStyle(color = Color(0xFFFFD54F)),
+                                    style = androidx.compose.ui.text.TextStyle(
+                                        color = Color(
+                                            0xFFFFD54F
+                                        )
+                                    ),
                                     color = Color(0xFFA0A0A0),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight(600),
@@ -418,21 +425,124 @@ fun TitleDetails() {
                             }
                         }
 
-                        if (titleData.metaScore > 0) {
-                            Text(
-                                text = "Metascore ${titleData.metaScore}",
-                                color = Color(0xFF8BC34A),
-                                style = androidx.compose.ui.text.TextStyle(color = Color(0xFFFFD54F)),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight(600),
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .background(
-                                        Color(0xFF212121),
-                                        shape = RoundedCornerShape(4.dp)
+                        if (titleData.rottenMeter.critic > 0) {
+                            Row(
+                                modifier = Modifier.padding(top = 4.dp)
+
+                            ) {
+                                if (titleData.metaScore > 0) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .background(
+                                                Color(0xFF212121),
+                                                shape = RoundedCornerShape(4.dp)
+                                            )
+                                    ) {
+                                        Text(
+                                            text = "Metascore",
+                                            color = Color(0xFF8BC34A),
+                                            style = androidx.compose.ui.text.TextStyle(
+                                                color = Color(
+                                                    0xFFFFD54F
+                                                )
+                                            ),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight(600),
+                                            modifier = Modifier
+                                                .padding(vertical = 4.dp)
+                                                .padding(start = 8.dp, end = 0.dp, top = 1.dp.div(4), bottom = 1.dp.div(4))
+                                        )
+                                        Text(
+                                            text = "${titleData.metaScore}",
+                                            color = Color(0xFF642F28),
+                                            style = androidx.compose.ui.text.TextStyle(
+                                                color = Color(
+                                                    0xFFFFD54F
+                                                )
+                                            ),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight(600),
+                                            modifier = Modifier
+                                                .padding(vertical = 4.dp, horizontal = 4.dp)
+                                                .background(
+                                                    Color.Yellow.copy(0.7f),
+                                                    shape = RoundedCornerShape(4.dp)
+                                                )
+                                                .padding(end = 4.dp, start = 4.dp, top = 1.dp.div(4), bottom = 1.dp.div(4))
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .padding(top = 4.dp, start = 2.dp)
+                                        .background(
+                                            Color(0xFF212121),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            id = if (titleData.rottenMeter.critic > 59) {
+                                                R.drawable.tomato_image
+                                            } else {
+                                                R.drawable.tomato_low
+                                            }
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .height(22.dp)
+                                            .size(22.dp)
+                                            .padding(vertical = 4.dp, horizontal = 4.dp)
+                                            .clickable { },
+                                        contentScale = ContentScale.Crop,
                                     )
-                                    .padding(horizontal = 4.dp, vertical = 4.dp)
-                            )
+                                    Text(
+                                        text = "${titleData.rottenMeter.critic}%",
+                                        color = Color(0xFF8BC34A),
+                                        style = androidx.compose.ui.text.TextStyle(
+                                            color = Color(
+                                                0xFFFFD54F
+                                            )
+                                        ),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight(600),
+                                        modifier = Modifier
+                                            .padding(vertical = 4.dp)
+                                    )
+                                    Image(
+                                        painter = painterResource(
+                                            id = if (titleData.rottenMeter.audience > 59) {
+                                                R.drawable.popcorn_image
+                                            } else {
+                                                R.drawable.popcorn_low
+                                            }
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .height(22.dp)
+                                            .size(22.dp)
+                                            .padding(vertical = 4.dp, horizontal = 4.dp)
+                                            .clickable { },
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                    Text(
+                                        text = "${titleData.rottenMeter.audience}%",
+                                        color = Color(0xFF8BC34A),
+                                        style = androidx.compose.ui.text.TextStyle(
+                                            color = Color(
+                                                0xFFFFD54F
+                                            )
+                                        ),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight(600),
+                                        modifier = Modifier
+                                            .padding(vertical = 4.dp)
+                                            .padding(end = 4.dp)
+                                    )
+                                }
+                            }
                         }
 
                         Text(
@@ -455,10 +565,12 @@ fun TitleDetails() {
                                             1.dp,
                                             Color(0xFFBB86FC),
                                             shape = RoundedCornerShape(8.dp)
-                                        ).background(
+                                        )
+                                        .background(
                                             Color(0xFF1F1F1F),
                                             shape = RoundedCornerShape(8.dp)
-                                        ).padding(16.dp),
+                                        )
+                                        .padding(16.dp),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Column {
@@ -522,7 +634,7 @@ fun TitleDetails() {
                             contentScale = ContentScale.Crop,
                             colorFilter =
                             ColorFilter.lighting(
-                                add = Color(0xFF8BC34A),
+                                add = Color.White,
                                 multiply = Color(0xFFFF5722)
                             )
                         )
@@ -549,7 +661,7 @@ fun TitleDetails() {
                             contentScale = ContentScale.Crop,
                             colorFilter =
                             ColorFilter.lighting(
-                                add = Color(0xFFE09C97),
+                                add = Color.White,
                                 multiply = Color.White
                             )
                         )
@@ -576,7 +688,7 @@ fun TitleDetails() {
                             contentScale = ContentScale.Crop,
                             colorFilter =
                             ColorFilter.lighting(
-                                add = Color(0xFF3F51B5),
+                                add = Color.White,
                                 multiply = Color.White
                             )
                         )
