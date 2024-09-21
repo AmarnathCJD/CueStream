@@ -27,21 +27,29 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,12 +57,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -75,6 +84,7 @@ import coil.request.ImageRequest
 import com.amarnath.cuestream.IMDBInst
 import com.amarnath.cuestream.R
 import com.amarnath.cuestream.meta.MainTitle
+import java.util.Date
 
 val ActiveTitleID = mutableStateOf<String?>("tt27446493")
 val ActiveTitleData = mutableStateOf<MainTitle?>(null)
@@ -216,13 +226,15 @@ fun VideoPlayer(source: String, thumbnail: String) {
 }
 
 
-@kotlin.OptIn(ExperimentalLayoutApi::class)
+@kotlin.OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TitleDetails() {
     val titleData = ActiveTitleData.value
     if (titleData != null) {
         val showModalOfImage = remember { mutableStateOf(false) }
         val showModalOfPlot = remember { mutableStateOf(false) }
+        val showModalOfAddToWatchlist = remember { mutableStateOf(false) }
+
         Box {
             Column(
                 modifier = Modifier
@@ -304,6 +316,137 @@ fun TitleDetails() {
                                         showShimmer.value = false
                                     }
                                 )
+                            }
+                        }
+                    }
+
+                    if (showModalOfAddToWatchlist.value) {
+                        Dialog(onDismissRequest = { showModalOfAddToWatchlist.value = false }) {
+                            Box(
+                                modifier = Modifier
+                                    .clickable { showModalOfAddToWatchlist.value = false }
+                                    .background(
+                                        Color(0xFF1F1F1F),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // Dialog title
+                                    Text(
+                                        text = "Add to Watchlist",
+                                        color = Color.White,
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.15.sp
+                                    )
+
+                                    val prioritization = remember { mutableStateOf("") }
+                                    val priorities = listOf("#FP", "#SP", "#TP")
+                                    val checkedArray = remember { mutableStateOf(BooleanArray(priorities.size) { false }) }
+                                    priorities.forEachIndexed { i, priority ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Checkbox(
+                                                checked = checkedArray.value[i],
+                                                onCheckedChange = {
+                                                    prioritization.value = priority
+                                                    checkedArray.value[i] = it
+                                                },
+                                                colors = CheckboxDefaults.colors(
+                                                    checkedColor = Color(0xFF8BC34A),
+                                                    uncheckedColor = Color(0xFF8BC34A),
+                                                    checkmarkColor = Color.White
+                                                )
+                                            )
+                                            Text(
+                                                text = priority,
+                                                color = Color(0xFF8BC34A),
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 0.15.sp
+                                            )
+                                        }
+                                    }
+
+                                    var comment by remember { mutableStateOf("") }
+                                    OutlinedTextField(
+                                        value = comment,
+                                        onValueChange = { comment = it },
+                                        label = { Text("Enter a comment") },
+                                        textStyle = TextStyle(color = Color.White),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                                            focusedBorderColor = Color(0xFF8BC34A),
+                                            unfocusedBorderColor = Color(0xFF8BC34A),
+                                            cursorColor = Color(0xFF8BC34A),
+                                            focusedTextColor = Color.White
+                                        )
+                                    )
+
+                                    var priorityValue by remember { mutableStateOf("") }
+                                    OutlinedTextField(
+                                        value = priorityValue,
+                                        onValueChange = {
+                                            if (it.all { char -> char.isDigit() } && it.toIntOrNull() in 0..10) {
+                                                priorityValue = it
+                                            }
+                                        },
+                                        label = { Text("Enter priority (0 - 10)") },
+                                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                                        textStyle = TextStyle(color = Color.White),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                                            focusedBorderColor = Color(0xFF8BC34A),
+                                            unfocusedBorderColor = Color(0xFF8BC34A),
+                                            cursorColor = Color(0xFF8BC34A),
+                                            focusedTextColor = Color.White
+                                        )
+                                    )
+
+                                    ElevatedButton(
+                                        onClick = {
+                                            val newWLObj = WLEntry(
+                                                title = titleData.title,
+                                                imdbID = titleData.id,
+                                                image = titleData.poster,
+                                                color = Color.Red,
+                                                rating = titleData.rating,
+                                                plot = titleData.description,
+                                                duration = titleData.duration,
+                                                comment = comment,
+                                                date = Date().toString(),
+                                                year = titleData.releaseDate,
+                                                priority = priorityValue.toIntOrNull() ?: 0,
+                                                doneTill = 0,
+                                                priorityClass = prioritization.value.ifEmpty { "#FP" },
+                                                status = "Watching",
+                                                genres = titleData.genres.split(", "),
+                                                type = "Movie"
+                                            )
+
+                                            dummyEntries.add(newWLObj)
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF8BC34A)
+                                        ),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Add to Watchlist",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.15.sp
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -451,7 +594,12 @@ fun TitleDetails() {
                                             fontWeight = FontWeight(600),
                                             modifier = Modifier
                                                 .padding(vertical = 4.dp)
-                                                .padding(start = 8.dp, end = 0.dp, top = 1.dp.div(4), bottom = 1.dp.div(4))
+                                                .padding(
+                                                    start = 8.dp,
+                                                    end = 0.dp,
+                                                    top = 1.dp.div(4),
+                                                    bottom = 1.dp.div(4)
+                                                )
                                         )
                                         Text(
                                             text = "${titleData.metaScore}",
@@ -469,7 +617,12 @@ fun TitleDetails() {
                                                     Color.Yellow.copy(0.7f),
                                                     shape = RoundedCornerShape(4.dp)
                                                 )
-                                                .padding(end = 4.dp, start = 4.dp, top = 1.dp.div(4), bottom = 1.dp.div(4))
+                                                .padding(
+                                                    end = 4.dp,
+                                                    start = 4.dp,
+                                                    top = 1.dp.div(4),
+                                                    bottom = 1.dp.div(4)
+                                                )
                                         )
                                     }
                                 }
@@ -621,7 +774,16 @@ fun TitleDetails() {
                 ) {
                     Column(
                         modifier = Modifier
-                            .background(Color.Black),
+                            .background(Color.Transparent)
+                            .padding(4.dp)
+                            .clickable(
+                                enabled = true,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    showModalOfAddToWatchlist.value = true
+                                }
+                            ),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Image(
@@ -629,8 +791,7 @@ fun TitleDetails() {
                             contentDescription = null,
                             modifier = Modifier
                                 .height(52.dp)
-                                .padding(horizontal = 8.dp, vertical = 15.dp)
-                                .clickable { },
+                                .padding(horizontal = 8.dp, vertical = 15.dp),
                             contentScale = ContentScale.Crop,
                             colorFilter =
                             ColorFilter.lighting(
@@ -853,6 +1014,7 @@ fun TitleDetails() {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         titleData.titleCasts.forEach { cast ->
+                            if (cast.third.isEmpty()) return@forEach
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1061,7 +1223,9 @@ fun TitleDetails() {
 
             Row {
                 ElevatedButton(
-                    onClick = { /*TODO*/ },
+                    onClick = {
+                        showModalOfAddToWatchlist.value = true
+                    },
                     modifier = Modifier.padding(16.dp),
                     colors = androidx.compose.material3.ButtonDefaults.elevatedButtonColors(
                         containerColor = Color(0xFF973636),

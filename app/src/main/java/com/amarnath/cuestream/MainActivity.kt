@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -20,6 +21,7 @@ import com.amarnath.cuestream.titles.MainTitlePage
 import com.amarnath.cuestream.titles.TitleSearchPage
 import com.amarnath.cuestream.titles.WatchListMain
 import com.amarnath.cuestream.ui.theme.CueStreamTheme
+import kotlinx.coroutines.delay
 
 val IMDBInst = IMDB()
 
@@ -33,7 +35,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = { AppTopBar() }) {
                     val padd = it
                     val nav = rememberNavController()
-                    NavHost(navController = nav, startDestination = "watchlist") {
+                    NavHost(navController = nav, startDestination = "search") {
                         composable("search") {
                             TitleSearchPage(padding = padd, nav = nav)
                         }
@@ -43,6 +45,12 @@ class MainActivity : ComponentActivity() {
                         composable("watchlist") {
                             WatchListMain(padding = padd)
                         }
+                    }
+
+                    // navigae to watchlist after 30 seconds
+                    LaunchedEffect(Unit) {
+                        delay(60000)
+                        nav.navigate("watchlist")
                     }
                 }
             }

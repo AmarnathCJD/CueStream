@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -63,7 +62,7 @@ data class WLEntry(
     val comment: String,
 )
 
-val dummyEntries = listOf(
+val dummyEntries = mutableListOf(
     WLEntry(
         title = "Lovely Runner",
         image = "https://m.media-amazon.com/images/M/MV5BNjYwM2RkMmUtOGU2OS00ZjdlLWE5Y2UtYzRkMzExYjdhNjVlXkEyXkFqcGc@._V1_QL75_UY562_CR7,0,380,562_.jpg",
