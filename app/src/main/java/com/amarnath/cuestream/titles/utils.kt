@@ -125,3 +125,17 @@ fun MarqueeText(
         )
     }
 }
+
+fun dateToTimestamp(date: String): Long {
+    val dateParts = date.split("-")
+    return if (dateParts.size == 3) {
+        val year = dateParts[0].toInt()
+        val month = dateParts[1].toInt()
+        val day = dateParts[2].toInt()
+        val cal = java.util.Calendar.getInstance()
+        cal.set(year, month - 1, day)
+        cal.timeInMillis
+    } else {
+        0
+    }
+}
