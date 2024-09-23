@@ -129,7 +129,7 @@ fun MarqueeText(
         modifier = modifier
             .horizontalScroll(scrollState, false)
             .fillMaxWidth(),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+        horizontalArrangement = Arrangement.Center
     ) {
         Text(
             text = text,

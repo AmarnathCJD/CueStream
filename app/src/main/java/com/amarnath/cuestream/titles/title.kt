@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -100,7 +101,7 @@ fun MainTitlePage(padding: PaddingValues, nav: NavController) {
     }
 
     if (isActiveLoading.value) {
-       LottieLoading(isActiveLoading)
+        LottieLoading(isActiveLoading)
     }
 
     Column(
@@ -625,7 +626,7 @@ fun TitleDetails() {
 
                                             showModalOfAddToWatchlist.value = false
                                             ActiveWatchListEntries.add(newWLObj)
-                                            SaveWatchListEntry(newWLObj,ctx)
+                                            SaveWatchListEntry(newWLObj, ctx)
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(
@@ -671,7 +672,7 @@ fun TitleDetails() {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = titleData.viewerClass.ifEmpty { "HD" },
-                                style = androidx.compose.ui.text.TextStyle(color = Color(0xFFE0E0E0)),
+                                style = TextStyle(color = Color(0xFFE0E0E0)),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight(600),
                                 modifier = Modifier
@@ -694,7 +695,7 @@ fun TitleDetails() {
                         ) {
                             Text(
                                 text = "${titleData.rating} / 10",
-                                style = androidx.compose.ui.text.TextStyle(color = Color(0xFFFFD54F)),
+                                style = TextStyle(color = Color(0xFFFFD54F)),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight(600),
                                 modifier = Modifier
@@ -708,7 +709,7 @@ fun TitleDetails() {
                             if (titleData.ratingCount != "0") {
                                 Text(
                                     text = "(${titleData.ratingCount})",
-                                    style = androidx.compose.ui.text.TextStyle(
+                                    style = TextStyle(
                                         color = Color(
                                             0xFFFFD54F
                                         )
@@ -780,7 +781,7 @@ fun TitleDetails() {
                                         Text(
                                             text = "Metascore",
                                             color = Color(0xFF8BC34A),
-                                            style = androidx.compose.ui.text.TextStyle(
+                                            style = TextStyle(
                                                 color = Color(
                                                     0xFFFFD54F
                                                 )
@@ -799,7 +800,7 @@ fun TitleDetails() {
                                         Text(
                                             text = "${titleData.metaScore}",
                                             color = Color(0xFF642F28),
-                                            style = androidx.compose.ui.text.TextStyle(
+                                            style = TextStyle(
                                                 color = Color(
                                                     0xFFFFD54F
                                                 )
@@ -849,7 +850,7 @@ fun TitleDetails() {
                                     Text(
                                         text = "${titleData.rottenMeter.critic}%",
                                         color = Color(0xFF8BC34A),
-                                        style = androidx.compose.ui.text.TextStyle(
+                                        style = TextStyle(
                                             color = Color(
                                                 0xFFFFD54F
                                             )
@@ -878,7 +879,7 @@ fun TitleDetails() {
                                     Text(
                                         text = "${titleData.rottenMeter.audience}%",
                                         color = Color(0xFF8BC34A),
-                                        style = androidx.compose.ui.text.TextStyle(
+                                        style = TextStyle(
                                             color = Color(
                                                 0xFFFFD54F
                                             )
@@ -1188,60 +1189,63 @@ fun TitleDetails() {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Top Cast",
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    if (titleData.titleCasts.any { it.third.isNotEmpty() }) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Top Cast",
+                                fontSize = 16.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        titleData.titleCasts.forEach { cast ->
-                            if (cast.third.isEmpty()) return@forEach
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .width(120.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                                horizontalAlignment = Alignment.Start
-                            ) {
-                                Text(
-                                    text = cast.first,
-                                    fontSize = 11.sp,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
-                                AsyncImage(
-                                    model = cast.third.split("@._V1_")
-                                        .first() + "@._V1_QL75_UX280_CR0,25,280,280_.jpg",
-                                    contentDescription = null,
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            titleData.titleCasts.forEach { cast ->
+                                if (cast.third.isEmpty()) return@forEach
+                                Column(
                                     modifier = Modifier
-                                        .align(Alignment.CenterHorizontally)
-                                        .size(100.dp)
-                                        .clip(
-                                            RoundedCornerShape(64.dp)
-                                        ),
-                                )
-                                MarqueeText(
-                                    text = "(As ${cast.second})",
-                                    fontSize = 8.sp,
-                                    color = Color(0xFFA0A0A0),
-                                    fontWeight = FontWeight(600),
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
+                                        .fillMaxWidth()
+                                        .width(120.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Text(
+                                        text = cast.first,
+                                        fontSize = 11.sp,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
+                                    AsyncImage(
+                                        model = cast.third.split("@._V1_")
+                                            .first() + "@._V1_QL75_UX280_CR0,25,280,280_.jpg",
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .size(100.dp)
+                                            .clip(
+                                                RoundedCornerShape(64.dp)
+                                            ),
+                                    )
+                                    MarqueeText(
+                                        text = "(As ${cast.second})",
+                                        fontSize = 8.sp,
+                                        color = Color(0xFFA0A0A0),
+                                        fontWeight = FontWeight(600),
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
+                                }
                             }
                         }
                     }
@@ -1284,7 +1288,22 @@ fun TitleDetails() {
                             Column(
                                 modifier = Modifier
                                     .width(120.dp)
-                                    .background(Color.Transparent),
+                                    .background(Color.Transparent)
+                                    .clickable(
+                                        enabled = true,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = rememberRipple(),
+                                        onClick = {
+                                            ActiveTitleID.value = moreLikeThis.imdbId
+                                            ActiveTitleData.value = null
+                                            isActiveLoading.value = true
+                                            IMDBInst.getTitle(
+                                                ActiveTitleID.value!!,
+                                                ActiveTitleData,
+                                                isActiveLoading
+                                            )
+                                        }
+                                    ),
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -1422,7 +1441,7 @@ fun TitleDetails() {
                         showModalOfAddToWatchlist.value = true
                     },
                     modifier = Modifier.padding(16.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.elevatedButtonColors(
+                    colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = Color(0xFF973636),
                         contentColor = Color.White
                     ),
@@ -1434,7 +1453,7 @@ fun TitleDetails() {
                     onClick = { /*TODO*/ },
                     modifier = Modifier.padding(16.dp),
                     shape = RoundedCornerShape(8.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.elevatedButtonColors(
+                    colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = Color(0xFF206B64),
                         contentColor = Color.White
                     ),
@@ -1450,7 +1469,7 @@ fun TitleDetails() {
             ) {
                 Text(
                     text = "${titleData.rating} / 10",
-                    style = androidx.compose.ui.text.TextStyle(color = Color(0xFFFFD54F)),
+                    style = TextStyle(color = Color(0xFFFFD54F)),
                     fontSize = 14.sp,
                     fontWeight = FontWeight(600),
                     modifier = Modifier

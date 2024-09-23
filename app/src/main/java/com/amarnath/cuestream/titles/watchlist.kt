@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.amarnath.cuestream.R
@@ -791,178 +792,138 @@ fun PriorityList(nav: NavController, prio: String) {
     }
 }
 
-
 @Composable
 fun EntryModal(entry: WLEntry, nav: NavController, onClose: () -> Unit) {
     Dialog(
-        onDismissRequest = onClose
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Transparent),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth(0.86f)
+                .fillMaxHeight(0.80f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF121212).copy(alpha = 0.8f))
+                .padding(16.dp)
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(1f)
-                    .fillMaxHeight(0.75f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF121212).copy(alpha = 0.9f))
-                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceAround
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceAround
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Row {
-                            Text(
-                                text = entry.title,
-                                fontSize = 16.sp,
-                                style = TextStyle(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFB9C8E0)
-                                ),
-                                modifier = Modifier.padding(horizontal = 2.dp)
-                            )
-
-                            Text(
-                                text = "(${entry.year})",
-                                fontSize = 9.sp,
-                                style = TextStyle(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF7CB342)
-                                ),
-                                modifier = Modifier
-                                    .padding(horizontal = 2.dp)
-                                    .padding(top = 5.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    AsyncImage(
-                        model = entry.image,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .height(400.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
-                            .border(
-                                BorderStroke(1.dp, Color(0xFF121212)),
-                                shape = RoundedCornerShape(6.dp)
-                            ),
-                        contentScale = ContentScale.Crop,
-                        alignment = Alignment.TopCenter,
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .padding(top = 12.dp, bottom = 8.dp)
-                    ) {
+                    Row {
                         Text(
-                            text = "${entry.rating} / 10",
-                            style = TextStyle(color = Color(0xFFFFD54F)),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight(600),
-                            modifier = Modifier
-                                .padding(top = 1.dp.div(2))
-                                .background(
-                                    Color(0xFF343C2B),
-                                    shape = RoundedCornerShape(4.dp)
-                                )
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                        val (fullStars, halfStars, emptyStars) = numHalfFullAndEmptyStars(
-                            entry.rating
-                        )
-                        Row(
-                            modifier = Modifier.padding(start = 4.dp, bottom = 0.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            repeat(fullStars) {
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = "Full Star",
-                                    tint = Color(0xFFFFD54F),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            if (halfStars == 1) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.star_half_24dp_e8eaed_fill0_wght400_grad0_opsz24),
-                                    contentDescription = "Half Star",
-                                    modifier = Modifier.size(18.dp),
-                                    colorFilter = ColorFilter.tint(
-                                        Color(
-                                            0xFFFFD54F
-                                        )
-                                    )
-                                )
-                            }
-                            repeat(emptyStars) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.star_24dp_e8eaed_fill0_wght400_grad0_opsz24),
-                                    contentDescription = "Half Star",
-                                    modifier = Modifier.size(18.dp),
-                                    colorFilter = ColorFilter.tint(
-                                        Color(
-                                            0xFFFFD54F
-                                        )
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        if (entry.duration != "") {
-                            Text(
-                                text = entry.duration,
-                                fontSize = 14.sp,
-                                style = TextStyle(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFB0BEC5)
-                                ),
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-                        }
-
-                        Text(
-                            text = entry.type + " ||" + " " + '{' + entry.imdbID + '}',
-                            fontSize = 10.sp,
+                            text = entry.title,
+                            fontSize = 16.sp,
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFB0BEC5)
+                                color = Color(0xFFB9C8E0)
                             ),
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        )
+
+                        Text(
+                            text = "(${entry.year})",
+                            fontSize = 9.sp,
+                            style = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF7CB342)
+                            ),
+                            modifier = Modifier
+                                .padding(horizontal = 2.dp)
+                                .padding(top = 5.dp)
                         )
                     }
+                }
 
-                    Text(
-                        text = entry.date,
-                        fontSize = 10.sp,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFB0BEC5)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AsyncImage(
+                    model = entry.image,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .height(380.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(
+                            BorderStroke(1.dp, Color(0xFF121212)),
+                            shape = RoundedCornerShape(12.dp)
                         ),
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
+                    contentScale = ContentScale.Fit,
+                    alignment = Alignment.TopCenter,
+                )
 
-                    if (entry.comment != "") {
+                Row(
+                    modifier = Modifier
+                        .padding(top = 12.dp, bottom = 8.dp)
+                ) {
+                    Text(
+                        text = "${entry.rating} / 10",
+                        style = TextStyle(color = Color(0xFFFFD54F)),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight(600),
+                        modifier = Modifier
+                            .padding(top = 1.dp.div(2))
+                            .background(
+                                Color(0xFF343C2B),
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    )
+                    val (fullStars, halfStars, emptyStars) = numHalfFullAndEmptyStars(
+                        entry.rating
+                    )
+                    Row(
+                        modifier = Modifier.padding(start = 4.dp, bottom = 0.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        repeat(fullStars) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Full Star",
+                                tint = Color(0xFFFFD54F),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        if (halfStars == 1) {
+                            Image(
+                                painter = painterResource(id = R.drawable.star_half_24dp_e8eaed_fill0_wght400_grad0_opsz24),
+                                contentDescription = "Half Star",
+                                modifier = Modifier.size(18.dp),
+                                colorFilter = ColorFilter.tint(
+                                    Color(
+                                        0xFFFFD54F
+                                    )
+                                )
+                            )
+                        }
+                        repeat(emptyStars) {
+                            Image(
+                                painter = painterResource(id = R.drawable.star_24dp_e8eaed_fill0_wght400_grad0_opsz24),
+                                contentDescription = "Half Star",
+                                modifier = Modifier.size(18.dp),
+                                colorFilter = ColorFilter.tint(
+                                    Color(
+                                        0xFFFFD54F
+                                    )
+                                )
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    if (entry.duration != "") {
                         Text(
-                            text = entry.comment,
+                            text = entry.duration,
                             fontSize = 14.sp,
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
@@ -972,149 +933,213 @@ fun EntryModal(entry: WLEntry, nav: NavController, onClose: () -> Unit) {
                         )
                     }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp)
+                    Text(
+                        text = entry.type + " ||" + " " + '{' + entry.imdbID + '}',
+                        fontSize = 10.sp,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFB0BEC5)
+                        ),
+                        modifier = Modifier.padding(top = 4.dp)
                     )
+                }
 
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                Text(
+                    text = entry.date,
+                    fontSize = 10.sp,
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFB0BEC5)
+                    ),
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+
+                if (entry.comment != "") {
+                    Text(
+                        text = entry.comment,
+                        fontSize = 14.sp,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFB0BEC5)
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 2.dp)
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 2.dp)
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .background(
+                                    Color(0xFF2A231C),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .padding(vertical = 4.dp)
+                                .padding(horizontal = 12.dp)
                         ) {
-                            Row(
+                            Text(
+                                text = if (entry.priorityClass == "#FP") "#FirstPriority" else if (entry.priorityClass == "#SP") "#SecondPriority" else "#ThirdPriority",
+                                style = TextStyle(color = Color(0xFF7CB342)),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight(600),
                                 modifier = Modifier
-                                    .padding(top = 8.dp)
-                                    .background(
-                                        Color(0xFF2A231C),
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(vertical = 4.dp)
-                                    .padding(horizontal = 12.dp)
-                            ) {
-                                Text(
-                                    text = if (entry.priorityClass == "#FP") "#FirstPriority" else if (entry.priorityClass == "#SP") "#SecondPriority" else "#ThirdPriority",
-                                    style = TextStyle(color = Color(0xFF7CB342)),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight(600),
-                                    modifier = Modifier
-                                )
-                                Text(
-                                    text = " #${entry.priority}th",
-                                    style = TextStyle(color = Color(0xFF2196F3)),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight(600),
-                                    modifier = Modifier
-                                )
-                            }
-                            Row(
+                            )
+                            Text(
+                                text = " #${entry.priority}th",
+                                style = TextStyle(color = Color(0xFF2196F3)),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight(600),
                                 modifier = Modifier
-                                    .padding(top = 8.dp)
-                                    .background(
-                                        Color(0xFF2A231C),
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(vertical = 4.dp)
-                                    .padding(horizontal = 12.dp)
-                            ) {
-                                Text(
-                                    text = entry.status,
-                                    style = TextStyle(color = Color(0xFF7CB342)),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight(600),
-                                    modifier = Modifier
-                                )
-                            }
+                            )
                         }
-
                         Row(
                             modifier = Modifier
-                                .padding(top = 3.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                                .padding(top = 8.dp)
+                                .background(
+                                    Color(0xFF2A231C),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .padding(vertical = 4.dp)
+                                .padding(horizontal = 12.dp)
                         ) {
-                            ElevatedButton(
-                                onClick = {
-                                    ActiveTitleID.value = entry.imdbID
-                                    nav.navigate("title")
-                                },
-                                modifier = Modifier.padding(8.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(0.dp),
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                ) {
-                                    Text(
-                                        text = "Info",
-                                        style = TextStyle(color = Color(0xFF2196F3)),
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight(600),
-                                        modifier = Modifier.padding(8.dp)
-                                    )
+                            Text(
+                                text = entry.status,
+                                style = TextStyle(color = Color(0xFF7CB342)),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight(600),
+                                modifier = Modifier
+                            )
+                        }
+                    }
 
-                                    Image(
-                                        painter = painterResource(R.drawable.info_24dp_e8eaed_fill0_wght400_grad0_opsz24),
-                                        contentDescription = "Info Icon",
-                                        modifier = Modifier.size(24.dp),
-                                        colorFilter = ColorFilter.tint(
-                                            Color(0xFF2196F3)
-                                        )
-                                    )
-                                }
-                            }
-                            ElevatedButton(
-                                onClick = {
-                                    ActiveWatchListEntries.remove(entry)
-                                    onClose()
-                                },
-                                modifier = Modifier.padding(8.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(0.dp),
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 3.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        ElevatedButton(
+                            onClick = {
+                                ActiveTitleID.value = entry.imdbID
+                                nav.navigate("title")
+                            },
+                            modifier = Modifier.padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceAround,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                ) {
-                                    Text(
-                                        text = "Remove",
-                                        style = TextStyle(color = Color(0xFF2196F3)),
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight(600),
-                                        modifier = Modifier.padding(8.dp)
-                                    )
+                                Text(
+                                    text = " Info",
+                                    style = TextStyle(color = Color(0xFF2196F3)),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight(600),
+                                    modifier = Modifier.padding(8.dp)
+                                )
 
-                                    Image(
-                                        painter = painterResource(R.drawable.cancel_24dp_e8eaed_fill0_wght400_grad0_opsz24),
-                                        contentDescription = "Info Icon",
-                                        modifier = Modifier.size(24.dp),
-                                        colorFilter = ColorFilter.tint(
-                                            Color(0xFFA90D46)
-                                        )
+                                Image(
+                                    painter = painterResource(R.drawable.info_24dp_e8eaed_fill0_wght400_grad0_opsz24),
+                                    contentDescription = "Info Icon",
+                                    modifier = Modifier.size(24.dp),
+                                    colorFilter = ColorFilter.tint(
+                                        Color(0xFF2196F3)
                                     )
-                                }
+                                )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        ElevatedButton(
+                            onClick = {
+                                ActiveTitleID.value = entry.imdbID
+                                nav.navigate("title")
+                            },
+                            modifier = Modifier.padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "Close",
+                                    style = TextStyle(color = Color(0xFF2196F3)),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight(600),
+                                    modifier = Modifier.padding(8.dp)
+                                )
 
-                        Text(
-                            text = entry.plot,
-                            fontSize = 14.sp,
-                            style = TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFB0BEC5)
-                            ),
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .padding(bottom = 16.dp)
-                        )
+                                Image(
+                                    painter = painterResource(R.drawable.star_half_24dp_e8eaed_fill0_wght400_grad0_opsz24),
+                                    contentDescription = "Info Icon",
+                                    modifier = Modifier.size(24.dp),
+                                    colorFilter = ColorFilter.tint(
+                                        Color(0xFF76FF03)
+                                    )
+                                )
+                            }
+                        }
+                        ElevatedButton(
+                            onClick = {
+                                ActiveWatchListEntries.remove(entry)
+                                onClose()
+                            },
+                            modifier = Modifier.padding(8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "Remove",
+                                    style = TextStyle(color = Color(0xFF2196F3)),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight(600),
+                                    modifier = Modifier.padding(8.dp)
+                                )
+
+                                Image(
+                                    painter = painterResource(R.drawable.cancel_24dp_e8eaed_fill0_wght400_grad0_opsz24),
+                                    contentDescription = "Info Icon",
+                                    modifier = Modifier.size(24.dp),
+                                    colorFilter = ColorFilter.tint(
+                                        Color(0xFFA90D46)
+                                    )
+                                )
+                            }
+                        }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = entry.plot,
+                        fontSize = 14.sp,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFB0BEC5)
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 16.dp)
+                    )
                 }
             }
         }
