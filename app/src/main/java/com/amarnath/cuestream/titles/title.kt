@@ -84,17 +84,25 @@ import coil.request.ImageRequest
 import com.amarnath.cuestream.IMDBInst
 import com.amarnath.cuestream.R
 import com.amarnath.cuestream.meta.MainTitle
+import com.amarnath.cuestream.meta.SaveWatchListEntry
 import java.util.Date
 
 val ActiveTitleID = mutableStateOf<String?>("tt27446493")
 val ActiveTitleData = mutableStateOf<MainTitle?>(null)
 val ActiveTrailerData = mutableStateOf<Pair<String, String>?>(null)
+val isActiveLoading = mutableStateOf(true)
 
 @Composable
 fun MainTitlePage(padding: PaddingValues, nav: NavController) {
     LaunchedEffect(ActiveTitleID.value) {
-        IMDBInst.getTitle(ActiveTitleID.value!!, ActiveTitleData)
+        isActiveLoading.value = true
+        IMDBInst.getTitle(ActiveTitleID.value!!, ActiveTitleData, isActiveLoading)
     }
+
+    if (isActiveLoading.value) {
+       LottieLoading(isActiveLoading)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -103,7 +111,9 @@ fun MainTitlePage(padding: PaddingValues, nav: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TrailerPlayer()
-        TitleDetails()
+        if (ActiveTitleID.value?.isNotEmpty() == true && ActiveTitleData.value?.id?.isNotEmpty() == true && ActiveTitleID.value === ActiveTitleData.value!!.id) {
+            TitleDetails()
+        }
     }
 }
 
@@ -230,6 +240,7 @@ fun VideoPlayer(source: String, thumbnail: String) {
 @Composable
 fun TitleDetails() {
     val titleData = ActiveTitleData.value
+    val ctx = LocalContext.current
     if (titleData != null) {
         val showModalOfImage = remember { mutableStateOf(false) }
         val showModalOfPlot = remember { mutableStateOf(false) }
@@ -333,9 +344,8 @@ fun TitleDetails() {
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Column(
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // Dialog title
                                     Text(
                                         text = "Add to Watchlist",
                                         color = Color.White,
@@ -344,28 +354,154 @@ fun TitleDetails() {
                                         letterSpacing = 0.15.sp
                                     )
 
-                                    val prioritization = remember { mutableStateOf("") }
+                                    Text(
+                                        text = "${titleData.title} to your watchlist?",
+                                        color = Color.Gray,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight(600),
+                                        letterSpacing = 0.15.sp
+                                    )
+
                                     val priorities = listOf("#FP", "#SP", "#TP")
-                                    val checkedArray = remember { mutableStateOf(BooleanArray(priorities.size) { false }) }
-                                    priorities.forEachIndexed { i, priority ->
+                                    val statuses =
+                                        listOf("Watching", "Completed", "On Hold", "To Watch")
+                                    val statusesColors = listOf(
+                                        Color(0xFF8BC34A),
+                                        Color(0xFF8BC34A),
+                                        Color(0xFF8BC34A),
+                                        Color(0xFF8BC34A)
+                                    )
+
+
+                                    var fpcheck by remember { mutableStateOf(false) }
+                                    var spcheck by remember { mutableStateOf(false) }
+                                    var tpcheck by remember { mutableStateOf(false) }
+
+                                    var watchingCheck by remember { mutableStateOf(false) }
+                                    var completedCheck by remember { mutableStateOf(false) }
+                                    var onHoldCheck by remember { mutableStateOf(false) }
+                                    var toWatchCheck by remember { mutableStateOf(false) }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        priorities.forEachIndexed { i, priority ->
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(0.dp)
+                                            ) {
+                                                Checkbox(
+                                                    checked = when (i) {
+                                                        0 -> fpcheck
+                                                        1 -> spcheck
+                                                        2 -> tpcheck
+                                                        else -> false
+                                                    },
+                                                    onCheckedChange = {
+                                                        when (i) {
+                                                            0 -> {
+                                                                fpcheck = it
+                                                                if (it) {
+                                                                    spcheck = false
+                                                                    tpcheck = false
+                                                                }
+                                                            }
+
+                                                            1 -> {
+                                                                spcheck = it
+                                                                if (it) {
+                                                                    fpcheck = false
+                                                                    tpcheck = false
+                                                                }
+                                                            }
+
+                                                            2 -> {
+                                                                tpcheck = it
+                                                                if (it) {
+                                                                    fpcheck = false
+                                                                    spcheck = false
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    colors = CheckboxDefaults.colors(
+                                                        checkedColor = Color(0xFF8BC34A),
+                                                        uncheckedColor = Color(0xFF8BC34A),
+                                                        checkmarkColor = Color.White
+                                                    )
+                                                )
+                                                Text(
+                                                    text = priority,
+                                                    color = Color(0xFF8BC34A),
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 0.15.sp
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    statuses.forEachIndexed { i, status ->
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.SpaceAround
                                         ) {
                                             Checkbox(
-                                                checked = checkedArray.value[i],
+                                                checked = when (i) {
+                                                    0 -> watchingCheck
+                                                    1 -> completedCheck
+                                                    2 -> onHoldCheck
+                                                    3 -> toWatchCheck
+                                                    else -> false
+                                                },
                                                 onCheckedChange = {
-                                                    prioritization.value = priority
-                                                    checkedArray.value[i] = it
+                                                    when (i) {
+                                                        0 -> {
+                                                            watchingCheck = it
+                                                            if (it) {
+                                                                completedCheck = false
+                                                                onHoldCheck = false
+                                                                toWatchCheck = false
+                                                            }
+                                                        }
+
+                                                        1 -> {
+                                                            completedCheck = it
+                                                            if (it) {
+                                                                watchingCheck = false
+                                                                onHoldCheck = false
+                                                                toWatchCheck = false
+                                                            }
+                                                        }
+
+                                                        2 -> {
+                                                            onHoldCheck = it
+                                                            if (it) {
+                                                                watchingCheck = false
+                                                                completedCheck = false
+                                                                toWatchCheck = false
+                                                            }
+                                                        }
+
+                                                        3 -> {
+                                                            toWatchCheck = it
+                                                            if (it) {
+                                                                watchingCheck = false
+                                                                completedCheck = false
+                                                                onHoldCheck = false
+                                                            }
+                                                        }
+                                                    }
                                                 },
                                                 colors = CheckboxDefaults.colors(
-                                                    checkedColor = Color(0xFF8BC34A),
-                                                    uncheckedColor = Color(0xFF8BC34A),
+                                                    checkedColor = statusesColors[i],
+                                                    uncheckedColor = statusesColors[i],
                                                     checkmarkColor = Color.White
                                                 )
                                             )
                                             Text(
-                                                text = priority,
+                                                text = status,
                                                 color = Color(0xFF8BC34A),
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -389,11 +525,55 @@ fun TitleDetails() {
                                         )
                                     )
 
+//                                    FilterChip(
+//                                        label = { Text("Add to Watchlist") },
+//                                        onClick = {
+//                                            val newWLObj = WLEntry(
+//                                                title = titleData.title,
+//                                                imdbID = titleData.id,
+//                                                image = titleData.poster,
+//                                                color = Color.Red,
+//                                                rating = titleData.rating,
+//                                                plot = titleData.description,
+//                                                duration = titleData.duration,
+//                                                comment = comment,
+//                                                date = Date().toString(),
+//                                                year = titleData.releaseDate,
+//                                                priority = when {
+//                                                    prioritization.value.isEmpty() -> 0
+//                                                    else -> prioritization.value.toInt()
+//                                                },
+//                                                doneTill = 0,
+//                                                priorityClass = when {
+//                                                    fpcheck -> "#FP"
+//                                                    spcheck -> "#SP"
+//                                                    tpcheck -> "#TP"
+//                                                    else -> "#TP"
+//                                                },
+//                                                status = when {
+//                                                    watchingCheck -> "Watching"
+//                                                    completedCheck -> "Completed"
+//                                                    onHoldCheck -> "On Hold"
+//                                                    toWatchCheck -> "To Watch"
+//                                                    else -> "To Watch"
+//                                                },
+//                                                genres = titleData.genres.split(", "),
+//                                                type = "Movie"
+//                                            )
+//
+//                                            dummyEntries.add(newWLObj)
+//                                        },
+//                                        modifier = Modifier.fillMaxWidth(),
+//                                        selected = fpcheck || spcheck || tpcheck
+//                                    )
+
                                     var priorityValue by remember { mutableStateOf("") }
                                     OutlinedTextField(
                                         value = priorityValue,
                                         onValueChange = {
                                             if (it.all { char -> char.isDigit() } && it.toIntOrNull() in 0..10) {
+                                                priorityValue = it
+                                            } else if (it.isEmpty()) {
                                                 priorityValue = it
                                             }
                                         },
@@ -415,22 +595,37 @@ fun TitleDetails() {
                                                 title = titleData.title,
                                                 imdbID = titleData.id,
                                                 image = titleData.poster,
-                                                color = Color.Red,
                                                 rating = titleData.rating,
                                                 plot = titleData.description,
                                                 duration = titleData.duration,
                                                 comment = comment,
                                                 date = Date().toString(),
                                                 year = titleData.releaseDate,
-                                                priority = priorityValue.toIntOrNull() ?: 0,
+                                                priority = when {
+                                                    priorityValue.isEmpty() -> 0
+                                                    else -> priorityValue.toInt()
+                                                },
                                                 doneTill = 0,
-                                                priorityClass = prioritization.value.ifEmpty { "#FP" },
-                                                status = "Watching",
+                                                priorityClass = when {
+                                                    fpcheck -> "#FP"
+                                                    spcheck -> "#SP"
+                                                    tpcheck -> "#TP"
+                                                    else -> "#TP"
+                                                },
+                                                status = when {
+                                                    watchingCheck -> "Watching"
+                                                    completedCheck -> "Completed"
+                                                    onHoldCheck -> "On Hold"
+                                                    toWatchCheck -> "To Watch"
+                                                    else -> "To Watch"
+                                                },
                                                 genres = titleData.genres.split(", "),
                                                 type = "Movie"
                                             )
 
-                                            dummyEntries.add(newWLObj)
+                                            showModalOfAddToWatchlist.value = false
+                                            ActiveWatchListEntries.add(newWLObj)
+                                            SaveWatchListEntry(newWLObj,ctx)
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(

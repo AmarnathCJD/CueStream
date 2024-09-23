@@ -249,7 +249,7 @@ class IMDB {
         })
     }
 
-    fun getTitle(id: String, store: MutableState<MainTitle?>) {
+    fun getTitle(id: String, store: MutableState<MainTitle?>, isLoading: MutableState<Boolean>) {
         val startTimer = System.currentTimeMillis()
         val request = okhttp3.Request.Builder()
             .url("https://www.imdb.com/title/$id")
@@ -263,6 +263,7 @@ class IMDB {
         client.newCall(request).enqueue(object : okhttp3.Callback {
             override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
                 Log.e("IMDB", "Failed to execute request: ${e.message}")
+                isLoading.value = false
             }
 
             override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
@@ -271,6 +272,7 @@ class IMDB {
                         "IMDB",
                         "Failed to execute request: ${response.code}, ${response.message}, url: ${request.url}"
                     )
+                    isLoading.value = false
                     return
                 }
                 try {
@@ -407,52 +409,6 @@ class IMDB {
                         metaScore = metaScore
                     )
 
-//                    val rreq = okhttp3.Request.Builder()
-//                        .url(
-//                            RottenMeterAPI
-//                        )
-//                        .headers(
-//                            okhttp3.Headers.headersOf(
-//                                "User-Agent",
-//                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-//                            )
-//                        )
-//                        .post(
-//                            okhttp3.RequestBody.create(
-//                                "application/x-www-form-urlencoded".toMediaTypeOrNull(),
-//                                "{\"requests\":[{\"indexName\":\"content_rt\",\"query\":\"$title\"}]}"
-//                            )
-//                        )
-//                        .build()
-//
-//                    val resp = client.newCall(rreq).execute()
-//                    try {
-//                        val rottenMeter = resp.body?.string()?.let { JSONObject(it) }
-//                        val hits = rottenMeter?.getJSONArray("results")?.getJSONObject(0)
-//                            ?.getJSONArray("hits")
-//
-//                        // loop through hits and find the best match (title + year)
-//                        var bestMatch = hits?.getJSONObject(0)
-//                        for (i in 1 until hits!!.length()) {
-//                            val hit = hits.getJSONObject(i)
-//                            if (hit.optString("title").contains(title) && hit.optString("releaseYear").contains(releaseDate)) {
-//                                bestMatch = hit
-//                                break
-//                            }
-//                        }
-//
-//                        val tomato = bestMatch?.optJSONObject("rottenTomatoes")
-//                        val critic = tomato?.optInt("criticsScore") ?: 0
-//                        val audience = tomato?.optInt("audienceScore") ?: 0
-//                        val sentiment = tomato?.optString("scoreSentiment") ?: "N/A"
-//
-//                        mainTitle.rottenMeter = RottenMeter(critic, audience, sentiment)
-//                    } catch (e: Exception) {
-//                        Log.e("IMDB", "Failed to parse rottenMeter response: ${e.message}")
-//                    }
-//
-//                    store.value = mainTitle
-
                     val justWatch = JustWatch()
                     println("IMDB: JustWatch search for $title")
                     val a = System.currentTimeMillis()
@@ -460,6 +416,7 @@ class IMDB {
                     println("IMDB: JustWatch search took ${System.currentTimeMillis() - a}ms")
 
                     store.value = mainTitle
+                    isLoading.value = false
 
                     Log.d("IMDB", "GetTitle - Took ${System.currentTimeMillis() - startTimer}ms")
                 } catch (e: Exception) {
@@ -739,14 +696,14 @@ class JustWatch {
                 directors = directors
             )
 
-            if (imdbId.isNotEmpty()) {
-                return if (imdbId == imdbID) {
+            return if (imdbId.isNotEmpty()) {
+                if (imdbId == imdbID) {
                     title
                 } else {
                     null
                 }
             } else {
-                return title
+                title
             }
         } catch (e: Exception) {
             val line = e.stackTrace[0].lineNumber
