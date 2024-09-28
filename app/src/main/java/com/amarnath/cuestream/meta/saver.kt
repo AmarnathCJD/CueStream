@@ -6,7 +6,14 @@ import com.amarnath.cuestream.titles.WLEntry
 fun SaveWatchListEntry(WL: WLEntry, ctx: android.content.Context) {
     val sharedPref = ctx.getSharedPreferences("watchlistxd", android.content.Context.MODE_PRIVATE)
     val editor = sharedPref.edit()
-    editor.putString(WL.title, WL.toString())
+    editor.putString(WL.imdbID, WL.toString())
+    editor.apply()
+}
+
+fun DeleteWatchListEntry(WL: WLEntry, ctx: android.content.Context) {
+    val sharedPref = ctx.getSharedPreferences("watchlistxd", android.content.Context.MODE_PRIVATE)
+    val editor = sharedPref.edit()
+    editor.remove(WL.imdbID)
     editor.apply()
 }
 

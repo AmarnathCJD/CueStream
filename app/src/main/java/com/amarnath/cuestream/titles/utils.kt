@@ -155,11 +155,67 @@ fun dateToTimestamp(date: String): Long {
     }
 }
 
+fun sinceDate(date: String): String {
+    val dateParts = date.split(" ")
+    val curr = java.util.Calendar.getInstance()
+    val cal = java.util.Calendar.getInstance()
+    println(dateParts)
+    cal.set(dateParts[5].toInt(), monthToNum(dateParts[1]), dateParts[2].toInt())
+
+    val diff = curr.timeInMillis - cal.timeInMillis
+    return when (val days = diff / (1000 * 60 * 60 * 24)) {
+        0L -> {
+            "Today"
+        }
+        1L -> {
+            "Yesterday"
+        }
+        else -> {
+            "$days days ago"
+        }
+    }
+}
+
+fun monthToNum(month: String): Int {
+    return when (month) {
+        "Jan" -> 0
+        "Feb" -> 1
+        "Mar" -> 2
+        "Apr" -> 3
+        "May" -> 4
+        "Jun" -> 5
+        "Jul" -> 6
+        "Aug" -> 7
+        "Sep" -> 8
+        "Oct" -> 9
+        "Nov" -> 10
+        "Dec" -> 11
+        else -> 0
+    }
+}
+
+fun ottToImage(ott: String): Pair<Int, Color> {
+    return when (ott) {
+        "Netflix" -> Pair(R.drawable.icons8_netflix_96, Color(0xFFE50914))
+        "Amazon Video" -> Pair(R.drawable.icons8_amazon_prime_96, Color(0xFF00A8E1))
+        "Disney Plus" -> Pair(R.drawable.icons8_disney_plus_96, Color(0xFF2962FF))
+        "Apple TV" -> Pair(R.drawable.icons8_apple_tv_100, Color(0xFFFFFFFF))
+        "Hotstar" -> Pair(R.drawable.icons8_hotstar_96, Color(0xFFFFFFFF))
+        "YouTube" -> Pair(R.drawable.icons8_youtube_96, Color(0xFFFF0000))
+        "Google Play Movies" -> Pair(R.drawable.icons8_google_play_96, Color(0xFF4285F4))
+        else -> {
+            Pair(R.drawable.popcorn_image, Color(0xFF000000))
+        }
+    }
+}
+
+
+
 @Composable
 fun LottieLoading(isPlaying: MutableState<Boolean>) {
     val composition by rememberLottieComposition(
         LottieCompositionSpec
-            .RawRes(R.raw.loading)
+            .RawRes(R.raw.load)
     )
 
     val progress by animateLottieCompositionAsState(

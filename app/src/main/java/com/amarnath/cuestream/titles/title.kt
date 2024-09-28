@@ -3,6 +3,7 @@ package com.amarnath.cuestream.titles
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.annotation.OptIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,31 +26,36 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,12 +90,18 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.amarnath.cuestream.IMDBInst
 import com.amarnath.cuestream.R
+import com.amarnath.cuestream.meta.JustWatchTitle
 import com.amarnath.cuestream.meta.MainTitle
 import com.amarnath.cuestream.meta.SaveWatchListEntry
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Date
+import kotlin.math.max
 
-val ActiveTitleID = mutableStateOf<String?>("tt27446493")
+val ActiveTitleID = mutableStateOf<String?>("tt2442560")
+val JwCountry = mutableStateOf<String?>("IN")
 val ActiveTitleData = mutableStateOf<MainTitle?>(null)
+val JustWatchTitle = mutableStateOf<JustWatchTitle?>(null)
 val ActiveTrailerData = mutableStateOf<Pair<String, String>?>(null)
 val isActiveLoading = mutableStateOf(true)
 
@@ -97,7 +109,7 @@ val isActiveLoading = mutableStateOf(true)
 fun MainTitlePage(padding: PaddingValues, nav: NavController) {
     LaunchedEffect(ActiveTitleID.value) {
         isActiveLoading.value = true
-        IMDBInst.getTitle(ActiveTitleID.value!!, ActiveTitleData, isActiveLoading)
+        IMDBInst.getTitle(ActiveTitleID.value!!, ActiveTitleData, isActiveLoading, JustWatchTitle)
     }
 
     if (isActiveLoading.value) {
@@ -237,7 +249,7 @@ fun VideoPlayer(source: String, thumbnail: String) {
 }
 
 
-@kotlin.OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@kotlin.OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TitleDetails() {
     val titleData = ActiveTitleData.value
@@ -250,7 +262,18 @@ fun TitleDetails() {
         Box {
             Column(
                 modifier = Modifier
-                    .background(Color.Black)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0x08DCDCDC),
+                                Color(0xFF0B0C0B),
+                                Color(0xFF0B0C0B),
+                                Color(0xFF0B0C0B),
+                                Color(0xFF0B0C0B),
+                                Color(0x08DCDCDC),
+                            )
+                        )
+                    )
                     .padding(bottom = 10.dp)
                     .verticalScroll(rememberScrollState())
             ) {
@@ -261,9 +284,6 @@ fun TitleDetails() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 30.dp, vertical = 16.dp)
-                        .background(
-                            Color.Black
-                        )
                 ) {
                     AsyncImage(
                         model =
@@ -518,55 +538,10 @@ fun TitleDetails() {
                                         label = { Text("Enter a comment") },
                                         textStyle = TextStyle(color = Color.White),
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                                            focusedBorderColor = Color(0xFF8BC34A),
-                                            unfocusedBorderColor = Color(0xFF8BC34A),
+                                        colors = TextFieldDefaults.colors(
                                             cursorColor = Color(0xFF8BC34A),
-                                            focusedTextColor = Color.White
                                         )
                                     )
-
-//                                    FilterChip(
-//                                        label = { Text("Add to Watchlist") },
-//                                        onClick = {
-//                                            val newWLObj = WLEntry(
-//                                                title = titleData.title,
-//                                                imdbID = titleData.id,
-//                                                image = titleData.poster,
-//                                                color = Color.Red,
-//                                                rating = titleData.rating,
-//                                                plot = titleData.description,
-//                                                duration = titleData.duration,
-//                                                comment = comment,
-//                                                date = Date().toString(),
-//                                                year = titleData.releaseDate,
-//                                                priority = when {
-//                                                    prioritization.value.isEmpty() -> 0
-//                                                    else -> prioritization.value.toInt()
-//                                                },
-//                                                doneTill = 0,
-//                                                priorityClass = when {
-//                                                    fpcheck -> "#FP"
-//                                                    spcheck -> "#SP"
-//                                                    tpcheck -> "#TP"
-//                                                    else -> "#TP"
-//                                                },
-//                                                status = when {
-//                                                    watchingCheck -> "Watching"
-//                                                    completedCheck -> "Completed"
-//                                                    onHoldCheck -> "On Hold"
-//                                                    toWatchCheck -> "To Watch"
-//                                                    else -> "To Watch"
-//                                                },
-//                                                genres = titleData.genres.split(", "),
-//                                                type = "Movie"
-//                                            )
-//
-//                                            dummyEntries.add(newWLObj)
-//                                        },
-//                                        modifier = Modifier.fillMaxWidth(),
-//                                        selected = fpcheck || spcheck || tpcheck
-//                                    )
 
                                     var priorityValue by remember { mutableStateOf("") }
                                     OutlinedTextField(
@@ -582,11 +557,8 @@ fun TitleDetails() {
                                         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                                         textStyle = TextStyle(color = Color.White),
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                                            focusedBorderColor = Color(0xFF8BC34A),
-                                            unfocusedBorderColor = Color(0xFF8BC34A),
+                                        colors = TextFieldDefaults.colors(
                                             cursorColor = Color(0xFF8BC34A),
-                                            focusedTextColor = Color.White
                                         )
                                     )
 
@@ -767,7 +739,6 @@ fun TitleDetails() {
                         if (titleData.rottenMeter.critic > 0) {
                             Row(
                                 modifier = Modifier.padding(top = 4.dp)
-
                             ) {
                                 if (titleData.metaScore > 0) {
                                     Row(
@@ -892,6 +863,136 @@ fun TitleDetails() {
                                     )
                                 }
                             }
+                        } else if (JustWatchTitle.value != null && JustWatchTitle.value!!.imdbId == ActiveTitleData.value!!.id && JustWatchTitle.value!!.tomatoMeter > 0) {
+                            Row(
+                                modifier = Modifier.padding(top = 4.dp)
+
+                            ) {
+                                if (titleData.metaScore > 0) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .background(
+                                                Color(0xFF212121),
+                                                shape = RoundedCornerShape(4.dp)
+                                            )
+                                    ) {
+                                        Text(
+                                            text = "M",
+                                            color = Color(0xFF8BC34A),
+                                            style = TextStyle(
+                                                color = Color(
+                                                    0xFFFFD54F
+                                                )
+                                            ),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight(600),
+                                            modifier = Modifier
+                                                .padding(vertical = 4.dp)
+                                                .padding(
+                                                    start = 4.dp,
+                                                    end = 0.dp,
+                                                    top = 1.dp.div(4),
+                                                    bottom = 1.dp.div(4)
+                                                )
+                                        )
+                                        Text(
+                                            text = "${titleData.metaScore}",
+                                            color = Color(0xFF642F28),
+                                            style = TextStyle(
+                                                color = Color(
+                                                    0xFFFFD54F
+                                                )
+                                            ),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight(600),
+                                            modifier = Modifier
+                                                .padding(vertical = 4.dp, horizontal = 4.dp)
+                                                .background(
+                                                    Color.Yellow.copy(0.7f),
+                                                    shape = RoundedCornerShape(4.dp)
+                                                )
+                                                .padding(
+                                                    end = 4.dp,
+                                                    start = 4.dp,
+                                                    top = 1.dp.div(4),
+                                                    bottom = 1.dp.div(4)
+                                                )
+                                        )
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .padding(top = 4.dp, start = 2.dp)
+                                        .background(
+                                            Color(0xFF212121),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            id = if (JustWatchTitle.value!!.tomatoMeter > 59) {
+                                                R.drawable.tomato_image
+                                            } else {
+                                                R.drawable.tomato_low
+                                            }
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .height(22.dp)
+                                            .size(22.dp)
+                                            .padding(vertical = 4.dp, horizontal = 4.dp)
+                                            .clickable { },
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                    Text(
+                                        text = "${JustWatchTitle.value!!.tomatoMeter}%",
+                                        color = Color(0xFF8BC34A),
+                                        style = TextStyle(
+                                            color = Color(
+                                                0xFFFFD54F
+                                            )
+                                        ),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight(600),
+                                        modifier = Modifier
+                                            .padding(vertical = 4.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+
+                                Row(
+                                    modifier = Modifier
+                                        .padding(top = 4.dp, start = 2.dp)
+                                        .background(
+                                            Color(0xFF212121),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                ) {
+                                    Text(
+                                        text = "JW-${
+                                            JustWatchTitle.value!!.jwRating.times(100).toInt()
+                                        }%",
+                                        color = Color(0xFF8BC34A),
+                                        style = TextStyle(
+                                            color = Color(
+                                                0xFFFFD54F
+                                            )
+                                        ),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight(600),
+                                        modifier = Modifier
+                                            .padding(vertical = 4.dp)
+                                            .padding(
+                                                start = 4.dp,
+                                                end = 0.dp,
+                                                top = 1.dp.div(4),
+                                                bottom = 1.dp.div(4)
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+                            }
                         }
 
                         Text(
@@ -965,7 +1066,7 @@ fun TitleDetails() {
                         .padding(
                             bottom = 4.dp
                         )
-                        .background(Color.Black),
+                        .background(Color.Transparent),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     Column(
@@ -1005,7 +1106,7 @@ fun TitleDetails() {
                     }
                     Column(
                         modifier = Modifier
-                            .background(Color.Black),
+                            .background(Color.Transparent),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Image(
@@ -1032,7 +1133,7 @@ fun TitleDetails() {
                     }
                     Column(
                         modifier = Modifier
-                            .background(Color.Black),
+                            .background(Color.Transparent),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Image(
@@ -1056,6 +1157,369 @@ fun TitleDetails() {
                             modifier = Modifier
                                 .padding(horizontal = 8.dp)
                         )
+                    }
+                }
+
+                if (JustWatchTitle.value != null && JustWatchTitle.value!!.imdbId == ActiveTitleData.value!!.id) {
+                    if (JustWatchTitle.value!!.backDrops.isNotEmpty()) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            thickness = 1.dp,
+                            color = Color(0xFF2E2B2B)
+                        )
+
+                        val scrollState = rememberLazyListState()
+                        val coroutineScope = rememberCoroutineScope()
+                        val currIndex = remember { mutableIntStateOf(0) }
+
+                        LaunchedEffect(Unit) {
+                            coroutineScope.launch {
+                                delay(5000)
+                                if (currIndex.intValue < JustWatchTitle.value!!.backDrops.size - 1) {
+                                    scrollState.animateScrollToItem(currIndex.intValue + 1)
+                                    currIndex.intValue += 1
+                                } else {
+                                    scrollState.animateScrollToItem(0)
+                                    currIndex.intValue = 0
+                                }
+                            }
+                        }
+
+                        LazyRow(
+                            state = scrollState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp)
+                                .padding(start = 3.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            items(JustWatchTitle.value!!.backDrops) { backDrop ->
+                                AsyncImage(
+                                    model =
+                                    ImageRequest.Builder(LocalContext.current)
+                                        .data("https://www.justwatch.com/images" + backDrop.replace("{profile}", "s1440").replace("{format}", "webp"))
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Backdrop",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    onSuccess = {
+                                        showShimmer.value = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    if (JustWatchTitle.value!!.offers.isNotEmpty()) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 0.dp),
+                            thickness = 1.dp,
+                            color = Color(0xFF2E2B2B)
+                        )
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Watch Now on (" + JwCountry.value + ")",
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight(600),
+                                    letterSpacing = 0.15.sp
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 10.dp)
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                JustWatchTitle.value!!.offers.forEach { platform ->
+                                    Column(
+                                        modifier = Modifier
+                                            .background(
+                                                Color(0xFF131313),
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
+                                            .clickable(
+                                                enabled = true,
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = ripple(),
+                                                onClick = {
+//                                                ctx.startActivity(
+//                                                    Intent(
+//                                                        Intent.ACTION_VIEW,
+//                                                        Uri.parse(platform.url)
+//                                                    )
+//                                                )
+
+                                                    // TODO: Learn this.
+                                                }
+                                            ),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .width(80.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            val image = ottToImage(platform.name)
+                                            Row {
+                                                Image(
+                                                    painter = painterResource(id = image.first),
+                                                    contentDescription = platform.name,
+                                                    modifier = Modifier
+                                                        .height(45.dp)
+                                                        .width(45.dp)
+                                                        .padding(4.dp),
+                                                    contentScale = ContentScale.Crop,
+                                                    colorFilter = if (image.first != R.drawable.popcorn_image && image.first != R.drawable.icons8_youtube_96) ColorFilter.tint(
+                                                        image.second
+                                                    ) else null
+                                                )
+                                            }
+                                            Row {
+                                                MarqueeText(
+                                                    text = platform.name,
+                                                    color = Color.White,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight(600),
+                                                    modifier = Modifier
+                                                        .padding(4.dp)
+                                                        .width(80.dp)
+                                                        .height(20.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            thickness = 1.dp,
+                            color = Color(0xFF2E2B2B)
+                        )
+
+                        if (JustWatchTitle.value!!.seasons.isNotEmpty()) {
+                            Column {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
+                                        .padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Season & Episodes",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight(600),
+                                        letterSpacing = 0.15.sp
+                                    )
+                                }
+
+                                val selectedChip = remember { mutableIntStateOf(0) }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
+                                        .padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AsyncImage(
+                                        model =
+                                        ImageRequest.Builder(LocalContext.current)
+                                            .data(
+                                                "https://images.justwatch.com" + JustWatchTitle.value!!.seasons[selectedChip.intValue].poster.replace(
+                                                    "{profile}",
+                                                    "s332"
+                                                ).replace("{format}", "webp")
+                                            )
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Season Poster",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFF1F1F1F))
+                                            .height(200.dp)
+                                            .width(130.dp),
+                                        onSuccess = {
+                                            showShimmer.value = false
+                                        }
+                                    )
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .padding(top = 0.dp, bottom = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 6.dp)
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            JustWatchTitle.value!!.seasons.reversed()
+                                                .forEachIndexed { i, season ->
+                                                    FilterChip(
+                                                        selected = selectedChip.intValue == i,
+                                                        label = {
+                                                            Text(
+                                                                text = season.seasonName,
+                                                                color = Color.White,
+                                                                fontSize = 12.sp,
+                                                                fontWeight = FontWeight(600),
+                                                                letterSpacing = 0.15.sp
+                                                            )
+                                                        },
+                                                        onClick = {
+                                                            selectedChip.intValue = i
+                                                        },
+                                                        colors = FilterChipDefaults.filterChipColors(
+                                                            selectedLabelColor = Color(0xFF8BC34A),
+                                                            labelColor = Color.White,
+                                                        ),
+                                                        border = BorderStroke(
+                                                            width = 1.dp,
+                                                            color = Color(0xFF8BC34A)
+                                                        )
+                                                    )
+                                                }
+                                        }
+
+                                        val count =
+                                            JustWatchTitle.value!!.seasons[selectedChip.intValue].episodeCount
+                                        val factor = max(count / 2, 4)
+                                        val rows = count / factor
+                                        val remaining = count % factor
+
+                                        Column (
+                                            modifier = Modifier
+                                                .height(140.dp)
+                                        ){
+                                            for (i in 0 until rows) {
+                                                Row (
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(top = 8.dp)
+                                                ){
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth(0.95f)
+                                                            .padding(top = 8.dp)
+                                                            .horizontalScroll(rememberScrollState()),
+                                                    ) {
+                                                        for (j in 0 until factor) {
+                                                            Column(
+                                                                modifier = Modifier
+                                                                    .padding(4.dp)
+                                                                    .background(
+                                                                        Color(0xFF212121),
+                                                                        shape = RoundedCornerShape(4.dp)
+                                                                    )
+                                                                    .width(40.dp)
+                                                                    .height(30.dp),
+                                                                verticalArrangement = Arrangement.Center,
+                                                                horizontalAlignment = Alignment.CenterHorizontally
+                                                            ) {
+                                                                Text(
+                                                                    text = "S${selectedChip.intValue + 1}E${(i * factor) + j + 1}",
+                                                                    color = Color.White,
+                                                                    fontSize = 12.sp,
+                                                                    fontWeight = FontWeight(600),
+                                                                    letterSpacing = 0.15.sp
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if (factor > 4) {
+                                                        Icon(
+                                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                            contentDescription = "Scroll Right",
+                                                            tint = Color(0xFF8BC34A),
+                                                            modifier = Modifier
+                                                                .size(24.dp)
+                                                                .align(Alignment.CenterVertically)
+                                                                .padding(top = 8.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            if (remaining > 0) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth(0.95f)
+                                                        .padding(top = 8.dp),
+                                                ) {
+                                                    for (i in 0 until remaining) {
+                                                        Column(
+                                                            modifier = Modifier
+                                                                .padding(4.dp)
+                                                                .background(
+                                                                    Color(0xFF212121),
+                                                                    shape = RoundedCornerShape(4.dp)
+                                                                )
+                                                                .width(40.dp)
+                                                                .height(30.dp),
+                                                            verticalArrangement = Arrangement.Center,
+                                                            horizontalAlignment = Alignment.CenterHorizontally
+                                                        ) {
+                                                            Text(
+                                                                text = "S${selectedChip.intValue + 1}E${(rows * factor) + i + 1}",
+                                                                color = Color.White,
+                                                                fontSize = 12.sp,
+                                                                fontWeight = FontWeight(600),
+                                                                letterSpacing = 0.15.sp
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalDivider(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                thickness = 1.dp,
+                                color = Color(0xFF2E2B2B)
+                            )
+                        }
                     }
                 }
 
@@ -1088,7 +1552,7 @@ fun TitleDetails() {
                                 .weight(1f)
                         },
                         verticalArrangement = Arrangement.spacedBy(0.dp),
-                        horizontalAlignment = Alignment.Start
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "Country of Origin",
@@ -1292,7 +1756,7 @@ fun TitleDetails() {
                                     .clickable(
                                         enabled = true,
                                         interactionSource = remember { MutableInteractionSource() },
-                                        indication = rememberRipple(),
+                                        indication = ripple(),
                                         onClick = {
                                             ActiveTitleID.value = moreLikeThis.imdbId
                                             ActiveTitleData.value = null
@@ -1300,7 +1764,8 @@ fun TitleDetails() {
                                             IMDBInst.getTitle(
                                                 ActiveTitleID.value!!,
                                                 ActiveTitleData,
-                                                isActiveLoading
+                                                isActiveLoading,
+                                                JustWatchTitle
                                             )
                                         }
                                     ),

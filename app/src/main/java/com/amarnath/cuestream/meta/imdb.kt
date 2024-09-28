@@ -44,12 +44,13 @@ data class RottenMeter(
 
 data class MainTitle(
     val id: String,
-    val title: String,
+    var title: String,
+    var ogTitle: String = "",
     val poster: String,
     val altTitle: String,
     val description: String,
     val rating: Double,
-    val viewerClass: String,
+    var viewerClass: String,
     val duration: String,
     val genres: String,
     val releaseDate: String,
@@ -65,7 +66,7 @@ data class MainTitle(
     val productionCompanies: String,
     val ratingCount: String = "0",
     val metaScore: Int = 0,
-    var rottenMeter: RottenMeter = RottenMeter(0, 0, "N/A")
+    var rottenMeter: RottenMeter = RottenMeter(0, 0, "N/A"),
 )
 
 class IMDB {
@@ -149,7 +150,6 @@ class IMDB {
                     for (i in 0 until temp.size) {
                         val fastResItem = fastRes.find { it.imdbId == temp[i].imdbId }
                         if (fastResItem != null) {
-                            println("IMDB: Found fastResItem: ${fastResItem.title}")
                             fastRes[fastRes.indexOf(fastResItem)] = fastResItem.copy(
                                 rating = temp[i].rating,
                                 plot = temp[i].plot,
@@ -225,11 +225,6 @@ class IMDB {
                         )
                     }
 
-                    // print all title and  poster
-                    for (i in 0 until temp.size) {
-                        println("IMDB: Title: ${temp[i].title}, Poster: ${temp[i].poster}")
-                    }
-
                     fastSearchResults.clear()
                     fastSearchResults.addAll(temp)
 
@@ -249,7 +244,7 @@ class IMDB {
         })
     }
 
-    fun getTitle(id: String, store: MutableState<MainTitle?>, isLoading: MutableState<Boolean>) {
+    fun getTitle(id: String, store: MutableState<MainTitle?>, isLoading: MutableState<Boolean>, jw: MutableState<JustWatchTitle?>) {
         val startTimer = System.currentTimeMillis()
         val request = okhttp3.Request.Builder()
             .url("https://www.imdb.com/title/$id")
@@ -283,8 +278,10 @@ class IMDB {
                             ?.replace("<script type=\"application/ld+json\">", "")
                             ?.replace("</script>", "")
                     val jsonMeta = jsonMetaObj?.let { JSONObject(it) }
+                    // <h1 textlength="20" data-testid="hero__pageTitle" class="sc-ec65ba05-0 dUhRgT"><span class="hero__primary-text" data-testid="hero__primary-text">Crash Landing on You</span></h1>
                     val title =
-                        soup?.select("span.hero__primary-text")?.first()?.text() ?: "N/A"
+                        soup?.select("h1[data-testid=hero__pageTitle]")?.first()?.text()
+                            ?.substringBefore("(") ?: "-"
                     val altTitle = jsonMeta?.optString("alternateName", "") ?: ""
                     val description = jsonMeta?.optString("description", "") ?: ""
                     val rating =
@@ -299,7 +296,7 @@ class IMDB {
                         }
                         temp.joinToString(", ")
                     } ?: "N/A"
-                    val releaseDate = jsonMeta?.optString("datePublished", "") ?: ""
+                    val releaseDate = soup?.select("a[href*=/releaseinfo]")?.first()?.text() ?: "N/A"
                     val actors = jsonMeta?.optJSONArray("actor")?.let {
                         val temp = mutableListOf<String>()
                         for (i in 0 until it.length()) {
@@ -377,12 +374,9 @@ class IMDB {
                         soup?.select("span.metacritic-score-box")?.first()?.text()?.toInt()
                             ?: 0
 
-                    // find text 'primevideo' and get the element
-                    val tmBoxWbShoveler =
-                        soup?.select("div[data-testid=tm-box-wb-shoveler]")?.text()
+                    // <div class="sc-ec65ba05-1 fUCCIx">Original title: Sarangeui bulsachak</div>
+                    val ogTitle = soup?.select("div.sc-ec65ba05-1.fUCCIx")?.first()?.text() ?: ""
                     // TODO: 'get available streaming services' from tmBoxWbShoveler
-
-                    println("IMDB: RatingCount: $ratingCount MetaScore: $metaScore Title: $tmBoxWbShoveler")
 
                     val mainTitle = MainTitle(
                         id = id,
@@ -408,15 +402,23 @@ class IMDB {
                         ratingCount = ratingCount ?: "0",
                         metaScore = metaScore
                     )
-
-                    val justWatch = JustWatch()
-                    println("IMDB: JustWatch search for $title")
-                    val a = System.currentTimeMillis()
-                    val jw = justWatch.search(title, releaseDate)
-                    println("IMDB: JustWatch search took ${System.currentTimeMillis() - a}ms")
-
                     store.value = mainTitle
                     isLoading.value = false
+
+                    val justWatch = JustWatch()
+                    val justWatchThread = Thread {
+                        jw.value = justWatch.search(mainTitle.title, mainTitle.releaseDate)
+
+                        if (jw.value?.originalTitle != mainTitle.title) {
+                            store.value?.title = jw.value?.originalTitle ?: mainTitle.title
+                        }
+
+                        if (jw.value!!.ageCertification != "N/A") {
+                            store.value!!.viewerClass = jw.value!!.ageCertification
+                        }
+                        Log.d("IMDB", "JustWatch - Done - ${jw.value?.title}")
+                    }
+                    justWatchThread.start()
 
                     Log.d("IMDB", "GetTitle - Took ${System.currentTimeMillis() - startTimer}ms")
                 } catch (e: Exception) {
@@ -491,20 +493,20 @@ data class JustWatchSearchResult(
 )
 
 data class JustWatchTitle(
-    val id: String,
-    val title: String,
-    val year: String,
-    val poster: String,
-    val offers: List<OTT>,
-    val jwRating: Double,
-    val tomatoMeter: Int,
+    val id: String, //
+    val title: String, //
+    val year: String, //
+    val poster: String, //
+    val offers: List<OTT>, //
+    val jwRating: Double, //
+    val tomatoMeter: Int, //
     val runtime: Int,
-    val originalTitle: String,
-    val ageCertification: String,
-    val imdbId: String,
-    val totalSeasonCount: Int,
-    val seasons: List<JWSeason>,
-    val backDrop: String,
+    val originalTitle: String, //
+    val ageCertification: String, //
+    val imdbId: String, //
+    val totalSeasonCount: Int, //
+    val seasons: List<JWSeason>, //
+    val backDrops: List<String>, //
     val clips: List<Clip>,
     val directors: List<String>,
 )
@@ -529,9 +531,10 @@ data class OTT(
 class JustWatch {
     private val client = okhttp3.OkHttpClient()
     fun search(query: String, yearInp: String = "", imdbId: String = ""): JustWatchTitle? {
+        println("Searching for: $query - $yearInp - $imdbId")
         val startTimer = System.currentTimeMillis()
-        val country = "IT" // will be dynamic
-        val language = "it"
+        val country = "IN" // will be dynamic
+        val language = "en" // will be dynamic
 
         var requestBody =
             "{\"operationName\":\"GetSuggestedTitles\",\"variables\":{\"country\":\"$country\",\"language\":\"$language\",\"first\":4,\"filter\":{\"searchQuery\":\"$query\",\"includeTitlesWithoutUrl\":true}},\"query\":\"query GetSuggestedTitles(\$country: Country!, \$language: Language!, \$first: Int!, \$filter: TitleFilter) {\\n  popularTitles(country: \$country, first: \$first, filter: \$filter) {\\n    edges {\\n      node {\\n        ...SuggestedTitle\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\\nfragment SuggestedTitle on MovieOrShow {\\n  id\\n  objectType\\n  objectId\\n  content(country: \$country, language: \$language) {\\n    fullPath\\n    title\\n    originalReleaseYear\\n    posterUrl\\n    fullPath\\n    __typename\\n  }\\n  watchNowOffer(country: \$country, platform: WEB) {\\n    id\\n    standardWebURL\\n    package {\\n      id\\n      packageId\\n      __typename\\n    }\\n    __typename\\n  }\\n  offers(country: \$country, platform: WEB) {\\n    monetizationType\\n    presentationType\\n    standardWebURL\\n    package {\\n      id\\n      packageId\\n      __typename\\n    }\\n    id\\n    __typename\\n  }\\n  __typename\\n}\\n\"}"
@@ -572,6 +575,11 @@ class JustWatch {
             Log.e("IMDB-JustWatch", "Failed to parse response: ${e.message}")
         }
 
+        if (searchResults.isEmpty()) {
+            Log.d("IMDB-JustWatch", "No search results found, returning from search")
+            return null
+        }
+
         var mostMatching: JustWatchSearchResult? = null
         var currentMatch = 0.0
         val yearFromDate = getYearFromDate(yearInp)
@@ -588,11 +596,11 @@ class JustWatch {
             }
         }
 
-        if (mostMatching != null) {
+        if (mostMatching != null && currentMatch > 0.5) {
             Log.d("IMDB-JustWatch", "Found most matching title: ${mostMatching.title}")
         } else {
-            Log.d("IMDB-JustWatch", "No matching title found")
-            return null
+            Log.d("IMDB-JustWatch", "No matching title found, returning from search")
+            mostMatching = searchResults[0]
         }
 
         requestBody =
@@ -626,12 +634,19 @@ class JustWatch {
             val tomatoMeter = content.optJSONObject("scoring")?.optInt("tomatoMeter") ?: 0
             val runtime = content.optInt("runtime")
             val originalTitle = content.optString("originalTitle")
-            val ageCertification = content.optString("ageCertification")
+            val ageCertification = content.optString("ageCertification", "N/A")
             val imdbID = content.getJSONObject("externalIds").optString("imdbId")
             val totalSeasonCount = node.optInt("totalSeasonCount")
             val seasons = mutableListOf<JWSeason>()
-            val backDrop =
-                content.getJSONArray("backdrops").getJSONObject(0).optString("backdropUrl")
+            val backDrops =
+                content.getJSONArray("backdrops").let { arr ->
+                    val list = mutableListOf<String>()
+                    for (i in 0 until arr.length()) {
+                        list.add(arr.getJSONObject(i).optString("backdropUrl"))
+                    }
+                    list
+                }
+
             val clips = mutableListOf<Clip>()
             val directors = mutableListOf("N/A")
             for (i in 0 until content.getJSONArray("credits").length()) {
@@ -650,22 +665,24 @@ class JustWatch {
                 clips.add(Clip(title, url))
             }
 
-            val seasonsArr = node.getJSONArray("seasons")
-            for (i in 0 until seasonsArr.length()) {
-                val season = seasonsArr.getJSONObject(i)
-                val episodeCount = season.optInt("totalEpisodeCount")
-                val seasonName = season.optJSONObject("content")?.optString("title")
-                val releaseYear =
-                    season.optJSONObject("content")?.optInt("originalReleaseYear") ?: 0
-                val poster = season.optJSONObject("content")?.optString("posterUrl")
-                seasons.add(
-                    JWSeason(
-                        episodeCount,
-                        seasonName ?: "N/A",
-                        poster ?: "N/A",
-                        releaseYear
+            val seasonsArr = node.optJSONArray("seasons")
+            if (seasonsArr != null) {
+                for (i in 0 until seasonsArr.length()) {
+                    val season = seasonsArr.getJSONObject(i)
+                    val episodeCount = season.optInt("totalEpisodeCount")
+                    val seasonName = season.optJSONObject("content")?.optString("title")
+                    val releaseYear =
+                        season.optJSONObject("content")?.optInt("originalReleaseYear") ?: 0
+                    val poster = season.optJSONObject("content")?.optString("posterUrl")
+                    seasons.add(
+                        JWSeason(
+                            episodeCount,
+                            seasonName ?: "N/A",
+                            poster ?: "N/A",
+                            releaseYear
+                        )
                     )
-                )
+                }
             }
 
             val title = JustWatchTitle(
@@ -681,7 +698,8 @@ class JustWatch {
                         val url = ""
                         list.add(OTT(name ?: "N/A", url))
                     }
-                    list
+
+                    list.distinctBy { it.name }
                 } ?: emptyList(),
                 jwRating = jwRating,
                 tomatoMeter = tomatoMeter,
@@ -691,7 +709,7 @@ class JustWatch {
                 imdbId = imdbID,
                 totalSeasonCount = totalSeasonCount,
                 seasons = seasons,
-                backDrop = backDrop,
+                backDrops = backDrops,
                 clips = clips,
                 directors = directors
             )

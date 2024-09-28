@@ -105,7 +105,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val padd = it
 
-                    NavHost(navController = nav, startDestination = "watchlist") {
+                    NavHost(navController = nav, startDestination = "search") {
                         composable("search") {
                             TitleSearchPage(padding = padd, nav = nav)
                         }
@@ -116,12 +116,6 @@ class MainActivity : ComponentActivity() {
                             WatchListMain(padding = padd, nav = nav)
                         }
                     }
-
-                    // navigae to watchlist after 30 seconds
-//                    LaunchedEffect(Unit) {
-//                        delay(60000)
-//                        nav.navigate("watchlist")
-//                    }
                 }
             }
         }
@@ -133,9 +127,10 @@ fun AppTopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(53.dp)
-            .background(Color(0xFF121212))
-            .padding(horizontal = 16.dp),
+            .height(63.dp)
+            .padding(top = 12.dp)
+            .background(Color.Transparent)
+            .padding(0.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {

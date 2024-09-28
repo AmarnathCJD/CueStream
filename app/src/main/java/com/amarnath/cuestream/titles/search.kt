@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,7 +62,18 @@ fun TitleSearchPage(padding: PaddingValues, nav: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color.Black)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0x08DCDCDC),
+                        Color(0xFF0B0C0B),
+                        Color(0xFF0B0C0B),
+                        Color(0xFF0B0C0B),
+                        Color(0xFF0B0C0B),
+                        Color(0x08DCDCDC),
+                    )
+                )
+            )
             .padding(
                 top = padding.calculateTopPadding() + 20.dp,
                 bottom = padding.calculateBottomPadding() + 30.dp
@@ -70,7 +82,7 @@ fun TitleSearchPage(padding: PaddingValues, nav: NavController) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
-                .background(color = Color.Black)
+                .background(color = Color.Transparent)
                 .padding(horizontal = 2.dp),
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
